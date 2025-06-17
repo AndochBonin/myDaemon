@@ -1,14 +1,9 @@
 package main
 
 import (
-	"fmt"
-	process "github.com/AndochBonin/myDaemon/process"
+//"github.com/AndochBonin/myDaemon/program"
 )
 
 func main() {
-	err := process.RemoveProcess("process/processList.json", 0)
 
-	if err != nil {
-		fmt.Println(err.Error())
-	}
 }
