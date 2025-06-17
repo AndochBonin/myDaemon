@@ -3,10 +3,8 @@ package process
 import (
 	"encoding/json"
 	"os"
+	"slices"
 )
-
-//var processListPath string = "process/processList.json"
-//var schedulePath string = "process/schedule.json"
 
 type Process struct {
 	Name			string
@@ -19,6 +17,9 @@ type Process struct {
 
 type Processes []Process
 
+var jsonPrefix = ""
+var jsonIndent = "    "
+
 func InsertProcess(fileName string, process Process) error {
 
 	var processes Processes
@@ -30,15 +31,12 @@ func InsertProcess(fileName string, process Process) error {
 
 	processes = append(processes, process)
 
-	processByteData, marshalErr := json.Marshal(processes)
+	processByteData, marshalErr := json.MarshalIndent(processes, jsonPrefix, jsonIndent)
 
 	if marshalErr != nil {
 		return marshalErr
 	}
-
-	os.WriteFile(fileName, processByteData, os.ModePerm)
-
-	return nil
+	return os.WriteFile(fileName, processByteData, 0644)
 }
 
 func ReadProcesses(fileName string, processes *Processes) error {
@@ -53,7 +51,41 @@ func ReadProcesses(fileName string, processes *Processes) error {
 	return nil
 }
 
-func RemoveProcess(process Process) {}
+func RemoveProcess(fileName string, processID int) error {
+	var processes Processes
+	readErr := ReadProcesses(fileName, &processes)
+	
+	if readErr != nil {
+		return readErr
+	}
 
-func UpdateProcess(process Process) {}
+	processes = slices.Delete(processes, processID, processID + 1)
+
+	processesByteData, marshalErr := json.MarshalIndent(processes, jsonPrefix, jsonIndent)
+
+	if marshalErr != nil {
+		return marshalErr
+	}
+
+	return os.WriteFile(fileName, processesByteData, 0644)
+}
+
+func UpdateProcess(fileName string, processID int, process Process) error {
+	var processes Processes
+	readErr := ReadProcesses(fileName, &processes)
+	
+	if readErr != nil {
+		return readErr
+	}
+
+	processes[processID] = process
+
+	processesByteData, marshalErr := json.MarshalIndent(processes, jsonPrefix, jsonIndent)
+
+	if marshalErr != nil {
+		return marshalErr
+	}
+
+	return os.WriteFile(fileName, processesByteData, 0644)
+}
 

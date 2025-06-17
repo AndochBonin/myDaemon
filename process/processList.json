@@ -1,0 +1,26 @@
+[
+    {
+        "Name": "1",
+        "URIWhitelist": null,
+        "StartHourUTC": 0,
+        "StartMinuteUTC": 0,
+        "DurationHours": 0,
+        "DurationMinutes": 0
+    },
+    {
+        "Name": "2",
+        "URIWhitelist": null,
+        "StartHourUTC": 0,
+        "StartMinuteUTC": 0,
+        "DurationHours": 0,
+        "DurationMinutes": 0
+    },
+    {
+        "Name": "3",
+        "URIWhitelist": null,
+        "StartHourUTC": 0,
+        "StartMinuteUTC": 0,
+        "DurationHours": 0,
+        "DurationMinutes": 0
+    }
+]

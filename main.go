@@ -6,7 +6,9 @@ import (
 )
 
 func main() {
-	fmt.Println("hello, world!")
-	insertErr := process.InsertProcess("process/processList.json", process.Process{Name: ""})
-	fmt.Println(insertErr)
+	err := process.RemoveProcess("process/processList.json", 0)
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 }
