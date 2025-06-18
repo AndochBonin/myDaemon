@@ -1,9 +1,11 @@
 package main
 
 import (
-//"github.com/AndochBonin/myDaemon/program"
+"github.com/AndochBonin/myDaemon/program"
 )
 
-func main() {
+var programListFile string = "./program/programList.json"
 
+func main() {
+	program.CreateProgram(programListFile, program.Program{})
 }
