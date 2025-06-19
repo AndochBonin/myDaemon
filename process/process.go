@@ -1,28 +1,29 @@
 package process
 
 import (
+	"github.com/AndochBonin/myDaemon/program"
+	"slices"
 	"sync"
 	"time"
-	"slices"
-	"github.com/AndochBonin/myDaemon/program"
 )
 
 var (
-	scheduler *Scheduler
-	once sync.Once
+	scheduler      *Scheduler
+	once           sync.Once
 	SchedulerError error
 )
 
 type Process struct {
-	Program program.Program
-	StartTime time.Time
+	Program             program.Program
+	StartTime           time.Time
 	DurationNanoseconds time.Duration
-	IsRecurring bool
+	IsRecurring         bool
 }
 
 type Scheduler struct {
-	CurrentProcess *Process
-	Schedule []Process
+	Schedule         []Process
+	CurrentProcess   *Process
+	currentProcessID int
 }
 
 func GetScheduler() *Scheduler {
@@ -41,7 +42,7 @@ func (scheduler *Scheduler) AddProcess(process Process) error {
 
 		if process.StartTime.Equal(scheduleProcess.StartTime) {
 			return SchedulerError
-		} else if  process.StartTime.After(scheduleProcess.StartTime) {
+		} else if process.StartTime.After(scheduleProcess.StartTime) {
 			insertIdx++
 		} else {
 			break
@@ -49,8 +50,8 @@ func (scheduler *Scheduler) AddProcess(process Process) error {
 	}
 
 	if insertIdx < len(scheduler.Schedule) {
-		nextProcessStartTime := scheduler.Schedule[insertIdx].StartTime
 		processEndTime := process.StartTime.Add(process.DurationNanoseconds)
+		nextProcessStartTime := scheduler.Schedule[insertIdx].StartTime
 
 		if processEndTime.After(nextProcessStartTime) {
 			return SchedulerError
@@ -65,6 +66,39 @@ func (scheduler *Scheduler) RemoveProcess(processID int) error {
 	if processID < 0 || processID >= len(scheduler.Schedule) {
 		return SchedulerError
 	}
-	scheduler.Schedule = slices.Delete(scheduler.Schedule, processID, processID + 1)
+	scheduler.Schedule = slices.Delete(scheduler.Schedule, processID, processID+1)
 	return nil
+}
+
+func (scheduler *Scheduler) UpdateCurrentProcess() bool {
+	currentTime := time.Now().UTC()
+
+	if scheduler.CurrentProcess != nil {
+		currentProcess := scheduler.CurrentProcess
+		currentProcessEndTime := currentProcess.StartTime.Add(currentProcess.DurationNanoseconds)
+
+		if currentTime.Before(currentProcessEndTime) {
+			return false
+		}
+
+		if !currentProcess.IsRecurring {
+			scheduler.RemoveProcess(scheduler.currentProcessID)
+		} else {
+			scheduler.currentProcessID++
+		}
+		if scheduler.currentProcessID == len(scheduler.Schedule) {
+			scheduler.currentProcessID = 0
+		}
+		scheduler.CurrentProcess = nil
+		scheduler.UpdateCurrentProcess()
+		return true
+	} else { //the CurrentProcessID is the next process to run
+		nextProcessStartTime := scheduler.Schedule[scheduler.currentProcessID].StartTime
+
+		if currentTime.Equal(nextProcessStartTime) || currentTime.After(nextProcessStartTime) {
+			scheduler.CurrentProcess = &scheduler.Schedule[scheduler.currentProcessID]
+			return true
+		}
+	}
+	return false
 }
