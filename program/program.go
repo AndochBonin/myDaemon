@@ -39,6 +39,10 @@ func ReadPrograms(fileName string, programList *ProgramList) error {
 	fileData, readErr := os.ReadFile(fileName)
 	
 	if readErr != nil {
+		if os.IsNotExist(readErr) {
+			*programList = ProgramList{}
+			return nil
+		}
 		return readErr
 	}
 
