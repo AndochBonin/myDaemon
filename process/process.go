@@ -74,14 +74,13 @@ func (scheduler *Scheduler) UpdateCurrentProcess() bool {
 	currentTime := time.Now().UTC()
 
 	if scheduler.CurrentProcess != nil {
-		currentProcess := scheduler.CurrentProcess
-		currentProcessEndTime := currentProcess.StartTime.Add(currentProcess.DurationNanoseconds)
+		currentProcessEndTime := scheduler.CurrentProcess.StartTime.Add(scheduler.CurrentProcess.DurationNanoseconds)
 
 		if currentTime.Before(currentProcessEndTime) {
 			return false
 		}
 
-		if !currentProcess.IsRecurring {
+		if !scheduler.CurrentProcess.IsRecurring {
 			scheduler.RemoveProcess(scheduler.currentProcessID)
 		} else {
 			scheduler.currentProcessID++
@@ -92,7 +91,7 @@ func (scheduler *Scheduler) UpdateCurrentProcess() bool {
 		scheduler.CurrentProcess = nil
 		scheduler.UpdateCurrentProcess()
 		return true
-	} else { //the CurrentProcessID is the next process to run
+	} else {
 		nextProcessStartTime := scheduler.Schedule[scheduler.currentProcessID].StartTime
 
 		if currentTime.Equal(nextProcessStartTime) || currentTime.After(nextProcessStartTime) {
@@ -101,4 +100,17 @@ func (scheduler *Scheduler) UpdateCurrentProcess() bool {
 		}
 	}
 	return false
+}
+
+func (scheduler *Scheduler) RunSchedule(done chan bool, process chan *Process) {
+	go func() {
+		for {
+			if <-done {
+				return
+			}
+			if scheduler.UpdateCurrentProcess() { // update ? send next process through channel
+				process <- scheduler.CurrentProcess
+			}
+		}
+	}()
 }
