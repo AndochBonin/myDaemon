@@ -14,10 +14,10 @@ var (
 )
 
 type Process struct {
-	Program             program.Program
-	StartTime           time.Time
-	DurationNanoseconds time.Duration
-	IsRecurring         bool
+	Program     program.Program
+	StartTime   time.Time
+	EndTime     time.Time
+	IsRecurring bool
 }
 
 type Scheduler struct {
@@ -50,14 +50,14 @@ func (scheduler *Scheduler) AddProcess(process Process) error {
 	}
 
 	if insertIdx < len(scheduler.Schedule) {
-		processEndTime := process.StartTime.Add(process.DurationNanoseconds)
 		nextProcessStartTime := scheduler.Schedule[insertIdx].StartTime
 
-		if processEndTime.After(nextProcessStartTime) {
+		if process.EndTime.After(nextProcessStartTime) {
 			return SchedulerError
 		}
+	} else if insertIdx > len(scheduler.Schedule) {
+		return SchedulerError
 	}
-
 	scheduler.Schedule = slices.Insert(scheduler.Schedule, insertIdx, process)
 	return nil
 }
@@ -70,13 +70,12 @@ func (scheduler *Scheduler) RemoveProcess(processID int) error {
 	return nil
 }
 
-func (scheduler *Scheduler) UpdateCurrentProcess() bool {
+func (scheduler *Scheduler) UpdateCurrentRunningProcess() bool {
 	currentTime := time.Now().UTC()
 
 	if scheduler.CurrentProcess != nil {
-		currentProcessEndTime := scheduler.CurrentProcess.StartTime.Add(scheduler.CurrentProcess.DurationNanoseconds)
 
-		if currentTime.Before(currentProcessEndTime) {
+		if currentTime.Before(scheduler.CurrentProcess.EndTime) {
 			return false
 		}
 
@@ -89,7 +88,7 @@ func (scheduler *Scheduler) UpdateCurrentProcess() bool {
 			scheduler.currentProcessID = 0
 		}
 		scheduler.CurrentProcess = nil
-		scheduler.UpdateCurrentProcess()
+		scheduler.UpdateCurrentRunningProcess()
 		return true
 	} else {
 		nextProcessStartTime := scheduler.Schedule[scheduler.currentProcessID].StartTime
@@ -108,7 +107,7 @@ func (scheduler *Scheduler) RunSchedule(done chan bool, process chan *Process) {
 			if <-done {
 				return
 			}
-			if scheduler.UpdateCurrentProcess() { // update ? send next process through channel
+			if scheduler.UpdateCurrentRunningProcess() { // update ? send next process through channel
 				process <- scheduler.CurrentProcess
 			}
 		}
