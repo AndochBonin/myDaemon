@@ -1,16 +1,17 @@
 package process
 
 import (
-	"github.com/AndochBonin/myDaemon/program"
 	"slices"
 	"sync"
 	"time"
+
+	"github.com/AndochBonin/myDaemon/program"
 )
 
 var (
-	scheduler      *Scheduler
+	schedule      *Schedule
 	once           sync.Once
-	SchedulerError error
+	ScheduleError error
 )
 
 type Process struct {
@@ -20,28 +21,24 @@ type Process struct {
 	IsRecurring bool
 }
 
-type Scheduler struct {
-	Schedule         []Process
-	CurrentProcess   *Process
-	currentProcessID int
-}
+type Schedule []Process
 
-func GetScheduler() *Scheduler {
-	createScheduler := func() {
-		scheduler = &Scheduler{}
+func GetSchedule() *Schedule {
+	createSchedule := func() {
+		schedule = &Schedule{}
 	}
-	once.Do(createScheduler)
-	return scheduler
+	once.Do(createSchedule)
+	return schedule
 }
 
-func (scheduler *Scheduler) AddProcess(process Process) error {
+func (schedule *Schedule) AddProcess(process Process) error {
 	insertIdx := 0
 
-	for insertIdx < len(scheduler.Schedule) {
-		scheduleProcess := scheduler.Schedule[insertIdx]
+	for insertIdx < len(*schedule) {
+		scheduleProcess := (*schedule)[insertIdx]
 
 		if process.StartTime.Equal(scheduleProcess.StartTime) {
-			return SchedulerError
+			return ScheduleError
 		} else if process.StartTime.After(scheduleProcess.StartTime) {
 			insertIdx++
 		} else {
@@ -49,67 +46,31 @@ func (scheduler *Scheduler) AddProcess(process Process) error {
 		}
 	}
 
-	if insertIdx < len(scheduler.Schedule) {
-		nextProcessStartTime := scheduler.Schedule[insertIdx].StartTime
+	if insertIdx < len(*schedule) {
+		nextProcessStartTime := (*schedule)[insertIdx].StartTime
 
 		if process.EndTime.After(nextProcessStartTime) {
-			return SchedulerError
+			return ScheduleError
 		}
-	} else if insertIdx > len(scheduler.Schedule) {
-		return SchedulerError
+	} else if insertIdx > len(*schedule) {
+		return ScheduleError
 	}
-	scheduler.Schedule = slices.Insert(scheduler.Schedule, insertIdx, process)
+	*schedule = slices.Insert(*schedule, insertIdx, process)
 	return nil
 }
 
-func (scheduler *Scheduler) RemoveProcess(processID int) error {
-	if processID < 0 || processID >= len(scheduler.Schedule) {
-		return SchedulerError
+func (schedule *Schedule) RemoveProcess(processID int, endRecurrence bool) error {
+	if processID < 0 || processID >= len(*schedule) {
+		return ScheduleError
 	}
-	scheduler.Schedule = slices.Delete(scheduler.Schedule, processID, processID+1)
+	process := (*schedule)[processID]
+	*schedule = slices.Delete(*schedule, processID, processID+1)
+
+	if process.IsRecurring && !endRecurrence {
+		timeOffset := time.Hour * 24
+		process.StartTime = process.StartTime.Add(timeOffset)
+		process.EndTime = process.EndTime.Add(timeOffset)
+		schedule.AddProcess(process)
+	}
 	return nil
-}
-
-func (scheduler *Scheduler) UpdateCurrentRunningProcess() bool {
-	currentTime := time.Now().UTC()
-
-	if scheduler.CurrentProcess != nil {
-
-		if currentTime.Before(scheduler.CurrentProcess.EndTime) {
-			return false
-		}
-
-		if !scheduler.CurrentProcess.IsRecurring {
-			scheduler.RemoveProcess(scheduler.currentProcessID)
-		} else {
-			scheduler.currentProcessID++
-		}
-		if scheduler.currentProcessID == len(scheduler.Schedule) {
-			scheduler.currentProcessID = 0
-		}
-		scheduler.CurrentProcess = nil
-		scheduler.UpdateCurrentRunningProcess()
-		return true
-	} else {
-		nextProcessStartTime := scheduler.Schedule[scheduler.currentProcessID].StartTime
-
-		if currentTime.Equal(nextProcessStartTime) || currentTime.After(nextProcessStartTime) {
-			scheduler.CurrentProcess = &scheduler.Schedule[scheduler.currentProcessID]
-			return true
-		}
-	}
-	return false
-}
-
-func (scheduler *Scheduler) RunSchedule(done chan bool, process chan *Process) {
-	go func() {
-		for {
-			if <-done {
-				return
-			}
-			if scheduler.UpdateCurrentRunningProcess() { // update ? send next process through channel
-				process <- scheduler.CurrentProcess
-			}
-		}
-	}()
 }
