@@ -84,6 +84,7 @@ func (schedule *Schedule) RunSchedule(stop chan bool, process chan *Process) {
 				return
 			}
 			if time.Now().After((*schedule)[0].EndTime) {
+				s.RemoveProcess(0, false)
 				process<-nil
 			} else if time.Now().Equal((*schedule)[0].StartTime) || time.Now().After((*schedule)[0].StartTime) {
 				process<-&(*schedule)[0]
