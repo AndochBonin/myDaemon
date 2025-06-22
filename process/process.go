@@ -80,7 +80,10 @@ func (scheduler *Scheduler) RemoveProcess(processID int, endRecurrence bool) err
 		timeOffset := time.Hour * 24
 		process.StartTime = process.StartTime.Add(timeOffset)
 		process.EndTime = process.EndTime.Add(timeOffset)
-		scheduler.AddProcess(process)
+		err := scheduler.AddProcess(process)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
