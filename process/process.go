@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	schedule      *Schedule
-	once           sync.Once
+	s      *Schedule
+	once          sync.Once
 	ScheduleError error
 )
 
@@ -18,6 +18,8 @@ type Process struct {
 	Program     program.Program
 	StartTime   time.Time
 	EndTime     time.Time
+	// start function timer -> tell main to run this process
+	// end function timer -> tell main to end this process
 	IsRecurring bool
 }
 
@@ -25,10 +27,10 @@ type Schedule []Process
 
 func GetSchedule() *Schedule {
 	createSchedule := func() {
-		schedule = &Schedule{}
+		s = &Schedule{}
 	}
 	once.Do(createSchedule)
-	return schedule
+	return s
 }
 
 func (schedule *Schedule) AddProcess(process Process) error {
@@ -73,4 +75,19 @@ func (schedule *Schedule) RemoveProcess(processID int, endRecurrence bool) error
 		schedule.AddProcess(process)
 	}
 	return nil
+}
+
+func (schedule *Schedule) RunSchedule(stop chan bool, process chan *Process) {
+	go func() {
+		for {
+			if <-stop {
+				return
+			}
+			if time.Now().After((*schedule)[0].EndTime) {
+				process<-nil
+			} else if time.Now().Equal((*schedule)[0].StartTime) || time.Now().After((*schedule)[0].StartTime) {
+				process<-&(*schedule)[0]
+			}
+		}	
+	}()
 }
