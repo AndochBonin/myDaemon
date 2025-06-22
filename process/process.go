@@ -1,6 +1,7 @@
 package process
 
 import (
+	"errors"
 	"slices"
 	"sync"
 	"time"
@@ -9,9 +10,9 @@ import (
 )
 
 var (
-	s             *Scheduler
-	once          sync.Once
-	ScheduleError error
+	s           *Scheduler
+	once        sync.Once
+	ErrSchedule = errors.New("invalid process scheduling")
 )
 
 type Process struct {
@@ -44,22 +45,28 @@ func (scheduler *Scheduler) AddProcess(process Process) error {
 		scheduleProcess := scheduler.Schedule[insertIdx]
 
 		if process.StartTime.Equal(scheduleProcess.StartTime) {
-			return ScheduleError
+			return ErrSchedule
 		} else if process.StartTime.After(scheduleProcess.StartTime) {
 			insertIdx++
 		} else {
 			break
 		}
 	}
+	if insertIdx > len(scheduler.Schedule) {
+		return ErrSchedule
+	}
 
+	if insertIdx > 0 {
+		previousProcessEndtime := scheduler.Schedule[insertIdx-1].EndTime
+		if previousProcessEndtime.Equal(process.EndTime) || previousProcessEndtime.After(process.StartTime) {
+			return ErrSchedule
+		}
+	}
 	if insertIdx < len(scheduler.Schedule) {
 		nextProcessStartTime := scheduler.Schedule[insertIdx].StartTime
-
 		if process.EndTime.After(nextProcessStartTime) {
-			return ScheduleError
+			return ErrSchedule
 		}
-	} else if insertIdx > len(scheduler.Schedule) {
-		return ScheduleError
 	}
 	scheduler.Schedule = slices.Insert(scheduler.Schedule, insertIdx, process)
 	return nil
@@ -67,7 +74,7 @@ func (scheduler *Scheduler) AddProcess(process Process) error {
 
 func (scheduler *Scheduler) RemoveProcess(processID int, endRecurrence bool) error {
 	if processID < 0 || processID >= len(scheduler.Schedule) {
-		return ScheduleError
+		return ErrSchedule
 	}
 	process := (scheduler.Schedule)[processID]
 	scheduler.Schedule = slices.Delete(scheduler.Schedule, processID, processID+1)
