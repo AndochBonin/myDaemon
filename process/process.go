@@ -39,32 +39,29 @@ func GetScheduler() *Scheduler {
 }
 
 func (scheduler *Scheduler) AddProcess(process Process) error {
-	insertIdx := 0
-
-	for insertIdx < len(scheduler.Schedule) {
-		scheduleProcess := scheduler.Schedule[insertIdx]
-
-		if process.StartTime.Equal(scheduleProcess.StartTime) {
-			return ErrSchedule
-		} else if process.StartTime.After(scheduleProcess.StartTime) {
-			insertIdx++
+	insertIdx, match := slices.BinarySearchFunc(scheduler.Schedule, process, func(E Process, T Process) int {
+		if E.StartTime == T.StartTime {
+			return 0
+		} else if E.StartTime.Before(T.StartTime) {
+			return -1
 		} else {
-			break
+			return 1
 		}
-	}
-	if insertIdx > len(scheduler.Schedule) {
+	})
+
+	if match || insertIdx > len(scheduler.Schedule) || insertIdx < 0 {
 		return ErrSchedule
 	}
 
 	if insertIdx > 0 {
 		previousProcessEndtime := scheduler.Schedule[insertIdx-1].EndTime
-		if previousProcessEndtime.Equal(process.EndTime) || previousProcessEndtime.After(process.StartTime) {
+		if previousProcessEndtime.Equal(process.StartTime) || previousProcessEndtime.After(process.StartTime) {
 			return ErrSchedule
 		}
 	}
 	if insertIdx < len(scheduler.Schedule) {
 		nextProcessStartTime := scheduler.Schedule[insertIdx].StartTime
-		if process.EndTime.After(nextProcessStartTime) {
+		if process.EndTime.Equal(nextProcessStartTime) || process.EndTime.After(nextProcessStartTime) {
 			return ErrSchedule
 		}
 	}

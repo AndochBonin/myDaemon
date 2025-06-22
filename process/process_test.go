@@ -48,7 +48,6 @@ func newMockProcess(t *testing.T, name string, startOffset time.Duration, durati
 	}
 }
 
-
 func TestAddProcess(t *testing.T) {
 	scheduler := GetScheduler()
 	scheduler.Schedule = nil
