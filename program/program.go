@@ -7,8 +7,8 @@ import (
 )
 
 type Program struct {
-	Name			string
-	URIWhitelist    []string
+	Name         string
+	URIWhitelist []string
 }
 
 type ProgramList []Program
@@ -24,20 +24,14 @@ func CreateProgram(fileName string, program Program) error {
 	if readErr != nil {
 		return readErr
 	}
-
 	programList = append(programList, program)
 
-	programListByteData, marshalErr := json.MarshalIndent(programList, jsonPrefix, jsonIndent)
-
-	if marshalErr != nil {
-		return marshalErr
-	}
-	return os.WriteFile(fileName, programListByteData, 0644)
+	return WriteProgramListToJSONFile(fileName, programList)
 }
 
 func ReadPrograms(fileName string, programList *ProgramList) error {
 	fileData, readErr := os.ReadFile(fileName)
-	
+
 	if readErr != nil {
 		if os.IsNotExist(readErr) {
 			*programList = ProgramList{}
@@ -54,37 +48,32 @@ func ReadPrograms(fileName string, programList *ProgramList) error {
 func DeleteProgram(fileName string, programID int) error {
 	var programList ProgramList
 	readErr := ReadPrograms(fileName, &programList)
-	
+
 	if readErr != nil {
 		return readErr
 	}
+	programList = slices.Delete(programList, programID, programID+1)
 
-	programList = slices.Delete(programList, programID, programID + 1)
-
-	programListByteData, marshalErr := json.MarshalIndent(programList, jsonPrefix, jsonIndent)
-
-	if marshalErr != nil {
-		return marshalErr
-	}
-
-	return os.WriteFile(fileName, programListByteData, 0644)
+	return WriteProgramListToJSONFile(fileName, programList)
 }
 
 func UpdateProgram(fileName string, programID int, program Program) error {
 	var programList ProgramList
 	readErr := ReadPrograms(fileName, &programList)
-	
+
 	if readErr != nil {
 		return readErr
 	}
-
 	programList[programID] = program
 
+	return WriteProgramListToJSONFile(fileName, programList)
+}
+
+func WriteProgramListToJSONFile(fileName string, programList ProgramList) error {
 	programListByteData, marshalErr := json.MarshalIndent(programList, jsonPrefix, jsonIndent)
 
 	if marshalErr != nil {
 		return marshalErr
 	}
-
 	return os.WriteFile(fileName, programListByteData, 0644)
 }
