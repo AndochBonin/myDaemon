@@ -250,3 +250,35 @@ func TestUpdateSchedule(t *testing.T) {
 		}
 	})
 }
+
+func TestGetCurrentProcess(t *testing.T) {
+	// test return nil when schedule is empty
+	scheduler := GetScheduler()
+	t.Run("return nil when schedule is empty", func(t *testing.T) {
+		scheduler.Schedule = nil
+		process := scheduler.GetCurrentProcess()
+		if process != nil {
+			t.Errorf("Expected nil got %v", process)
+		}
+	})
+	// test return nil when process hasn't started
+	t.Run("return nil when process at index 0 hasn't started", func(t *testing.T) {
+		scheduler.Schedule = nil
+		pendingProcess := newMockProcess(t, "pending process", time.Hour, time.Minute, false)
+		scheduler.AddProcess(pendingProcess)
+		process := scheduler.GetCurrentProcess()
+		if process != nil {
+			t.Errorf("Expected nil got %v", process)
+		}
+	})
+	// test return process when time is within start and end time
+	t.Run("return process at index 0 when time is within start and end time", func(t *testing.T) {
+		scheduler.Schedule = nil
+		ongoingProcess := newMockProcess(t, "ongoing process", -time.Minute, time.Hour, false)
+		scheduler.AddProcess(ongoingProcess)
+		process := scheduler.GetCurrentProcess()
+		if process == nil ||!reflect.DeepEqual(*process, ongoingProcess) {
+			t.Errorf("Expected %v got %v", ongoingProcess, process)
+		}
+	})
+}
