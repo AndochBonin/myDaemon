@@ -193,3 +193,60 @@ func TestRemoveProcess(t *testing.T) {
 		checkSchedule(t, scheduler.Schedule, expected)
 	})
 }
+
+func TestUpdateSchedule(t *testing.T) {
+	scheduler := GetScheduler()
+	scheduler.Schedule = nil
+	t.Run("returns nil when schedule is empty", func(t *testing.T) {
+		err := scheduler.UpdateSchedule()
+		scheduleLength := len(scheduler.Schedule)
+		if err != nil {
+			t.Errorf("Unexpected error. Expected %v got %v", nil, err)
+		}
+		if scheduleLength != 0 {
+			t.Errorf("Expected schedule length 0 but got length %v", scheduleLength)
+		}
+	})
+
+	t.Run("leaves schedule as is if time is within start and end time of schedule[0]", func(t *testing.T) {
+		scheduler.Schedule = nil
+		ongoingProcess := newMockProcess(t, "ongoing process", -time.Minute, time.Hour, false)
+		scheduler.AddProcess(ongoingProcess)
+		err := scheduler.UpdateSchedule()
+		if err != nil {
+		t.Errorf("Unexpected error. Expected %v got %v", nil, err)
+		}
+		expected := []Process{ongoingProcess}
+		if !reflect.DeepEqual(scheduler.Schedule, expected) {
+			t.Errorf("Expected %v got %v", expected, scheduler.Schedule)
+		}
+	})
+
+	t.Run("removes process at index 0 if time is past end time of process", func(t *testing.T) {
+		scheduler.Schedule = nil
+		completedProcess := newMockProcess(t, "completed process", -time.Hour, time.Minute, false)
+		scheduler.AddProcess(completedProcess)
+		err := scheduler.UpdateSchedule()
+		if err != nil {
+		t.Errorf("Unexpected error. Expected %v got %v", nil, err)
+		}
+		expected := []Process{}
+		if !reflect.DeepEqual(scheduler.Schedule, expected) {
+			t.Errorf("Expected %v got %v", expected, scheduler.Schedule)
+		}
+	})
+
+	t.Run("leaves schedule as is if time is before start time of schedule[0]", func(t *testing.T) {
+		scheduler.Schedule = nil
+		pendingProcess := newMockProcess(t, "pending process", time.Hour, time.Minute, false)
+		scheduler.AddProcess(pendingProcess)
+		err := scheduler.UpdateSchedule()
+		if err != nil {
+		t.Errorf("Unexpected error. Expected %v got %v", nil, err)
+		}
+		expected := []Process{pendingProcess}
+		if !reflect.DeepEqual(scheduler.Schedule, expected) {
+			t.Errorf("Expected %v got %v", expected, scheduler.Schedule)
+		}
+	})
+}
