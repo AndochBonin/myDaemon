@@ -25,9 +25,7 @@ type Process struct {
 }
 
 type Scheduler struct {
-	Schedule    []Process
-	ProcessChan chan *Process
-	StopChan    chan bool
+	Schedule []Process
 }
 
 func GetScheduler() *Scheduler {
@@ -40,7 +38,7 @@ func GetScheduler() *Scheduler {
 
 func (scheduler *Scheduler) AddProcess(process Process) error {
 	insertIdx, match := slices.BinarySearchFunc(scheduler.Schedule, process, func(E Process, T Process) int {
-		if E.StartTime == T.StartTime {
+		if E.StartTime.Equal(T.StartTime) {
 			return 0
 		} else if E.StartTime.Before(T.StartTime) {
 			return -1
@@ -88,18 +86,20 @@ func (scheduler *Scheduler) RemoveProcess(processID int, endRecurrence bool) err
 	return nil
 }
 
-func (scheduler *Scheduler) RunSchedule() {
-	go func() {
-		for {
-			if <-scheduler.StopChan {
-				return
-			}
-			if time.Now().After(scheduler.Schedule[0].EndTime) {
-				s.RemoveProcess(0, false)
-				scheduler.ProcessChan <- nil
-			} else if time.Now().Equal(scheduler.Schedule[0].StartTime) || time.Now().After(scheduler.Schedule[0].StartTime) {
-				scheduler.ProcessChan <- &scheduler.Schedule[0]
-			}
-		}
-	}()
+func (scheduler *Scheduler) UpdateSchedule() error {
+	if len(scheduler.Schedule) == 0 {
+		return nil
+	} else if time.Now().After(scheduler.Schedule[0].EndTime) {
+		return scheduler.RemoveProcess(0, false)
+	}
+	return nil
+}
+
+func (scheduler *Scheduler) GetCurrentProcess() *Process {
+	if len(scheduler.Schedule) == 0 {
+		return nil
+	} else if time.Now().After(scheduler.Schedule[0].StartTime) {
+		return &scheduler.Schedule[0]
+	}
+	return nil
 }

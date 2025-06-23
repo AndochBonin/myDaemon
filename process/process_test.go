@@ -152,9 +152,9 @@ func TestRemoveProcess(t *testing.T) {
 	t.Run("process with recurrence reinserted in correct order", func(t *testing.T) {
 		scheduler.Schedule = nil
 		testProcess := newMockProcess(t, "recurring", time.Second, time.Hour, true)
-		beforeTestProcess := newMockProcess(t, "earlier", -time.Hour, time.Minute * 30, false)
-		afterTestProcess := newMockProcess(t, "later", time.Hour * 2, time.Minute * 30, false)
-		afterRecurredProcess := newMockProcess(t, "later", time.Hour * 27, time.Minute * 30, false)
+		beforeTestProcess := newMockProcess(t, "earlier", -time.Hour, time.Minute*30, false)
+		afterTestProcess := newMockProcess(t, "later", time.Hour*2, time.Minute*30, false)
+		afterRecurredProcess := newMockProcess(t, "later", time.Hour*27, time.Minute*30, false)
 
 		scheduler.AddProcess(testProcess)
 		scheduler.AddProcess(beforeTestProcess)
@@ -176,9 +176,9 @@ func TestRemoveProcess(t *testing.T) {
 	t.Run("recurring process reinsertion fails when overlapping with existing process", func(t *testing.T) {
 		scheduler.Schedule = nil
 		testProcess := newMockProcess(t, "recurring", time.Second, time.Hour, true)
-		beforeTestProcess := newMockProcess(t, "earlier", -time.Hour, time.Minute * 30, false)
-		afterTestProcess := newMockProcess(t, "later", time.Hour * 2, time.Minute * 30, false)
-		duringRecurredProcess := newMockProcess(t, "later", time.Hour * 24, time.Hour, false)
+		beforeTestProcess := newMockProcess(t, "earlier", -time.Hour, time.Minute*30, false)
+		afterTestProcess := newMockProcess(t, "later", time.Hour*2, time.Minute*30, false)
+		duringRecurredProcess := newMockProcess(t, "later", time.Hour*24, time.Hour, false)
 
 		scheduler.AddProcess(testProcess)
 		scheduler.AddProcess(beforeTestProcess)
@@ -192,13 +192,4 @@ func TestRemoveProcess(t *testing.T) {
 		expected := []Process{beforeTestProcess, afterTestProcess, duringRecurredProcess}
 		checkSchedule(t, scheduler.Schedule, expected)
 	})
-}
-
-func TestRunScheduler(t *testing.T) {
-	// test that scheduler stops when StopChan receives true
-	// test process switching: remove old, send nil, send new when time passes
-	// test that process is sent through ProcessChan at correct start time
-	// test behavior when Schedule is empty (should not panic)
-	// test concurrency behavior during schedule execution (e.g., run and remove at same time)
-	// test using short durations or time mocking to avoid long waits
 }
