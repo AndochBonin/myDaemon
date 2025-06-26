@@ -1,22 +1,20 @@
-module github.com/AndochBonin/myDaemon
+module github.com/AndochBonin/myDaemon/tui
 
 go 1.24.3
 
-replace github.com/AndochBonin/myDaemon/program => ./program
+replace github.com/AndochBonin/myDaemon/program => ../program
 
-replace github.com/AndochBonin/myDaemon/process => ./process
-
-replace github.com/AndochBonin/myDaemon/tui => ./tui
+replace github.com/AndochBonin/myDaemon/process => ../process
 
 require (
 	github.com/AndochBonin/myDaemon/process v0.0.0-00010101000000-000000000000
 	github.com/AndochBonin/myDaemon/program v0.0.0-00010101000000-000000000000
-	github.com/AndochBonin/myDaemon/tui v0.0.0-00010101000000-000000000000
 )
+
+require github.com/charmbracelet/bubbletea v1.3.5
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
-	github.com/charmbracelet/bubbletea v1.3.5 // indirect
 	github.com/charmbracelet/colorprofile v0.2.3-0.20250311203215-f60798e515dc // indirect
 	github.com/charmbracelet/lipgloss v1.1.0 // indirect
 	github.com/charmbracelet/x/ansi v0.8.0 // indirect

@@ -19,8 +19,6 @@ type Process struct {
 	Program   program.Program
 	StartTime time.Time
 	EndTime   time.Time
-	// start function timer -> tell main to run this process
-	// end function timer -> tell main to end this process
 	IsRecurring bool
 }
 
@@ -102,4 +100,8 @@ func (scheduler *Scheduler) GetCurrentProcess() *Process {
 		return &scheduler.Schedule[0]
 	}
 	return nil
+}
+
+func isValidProcess(process Process) bool {
+	return process.StartTime.Before(process.EndTime)
 }

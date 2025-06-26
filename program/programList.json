@@ -1,10 +1,38 @@
 [
     {
-        "Name": "2",
+        "Name": "test",
         "URIWhitelist": null
     },
     {
-        "Name": "updated",
+        "Name": "test",
+        "URIWhitelist": null
+    },
+    {
+        "Name": "test",
+        "URIWhitelist": null
+    },
+    {
+        "Name": "test",
+        "URIWhitelist": null
+    },
+    {
+        "Name": "test",
+        "URIWhitelist": null
+    },
+    {
+        "Name": "test",
+        "URIWhitelist": null
+    },
+    {
+        "Name": "aha a new one",
+        "URIWhitelist": null
+    },
+    {
+        "Name": "aha a new one",
+        "URIWhitelist": null
+    },
+    {
+        "Name": "aha a new one",
         "URIWhitelist": null
     }
 ]
