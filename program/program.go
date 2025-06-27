@@ -52,6 +52,10 @@ func DeleteProgram(fileName string, programID int) error {
 	if readErr != nil {
 		return readErr
 	}
+
+	if programID < 0 || programID >= len(programList) {
+		return nil
+	}
 	programList = slices.Delete(programList, programID, programID+1)
 
 	return WriteProgramListToJSONFile(fileName, programList)
