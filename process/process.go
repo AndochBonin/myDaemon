@@ -67,7 +67,7 @@ func (scheduler *Scheduler) AddProcess(process Process) error {
 
 func (scheduler *Scheduler) RemoveProcess(processID int, endRecurrence bool) error {
 	if processID < 0 || processID >= len(scheduler.Schedule) {
-		return ErrSchedule
+		return nil
 	}
 	process := (scheduler.Schedule)[processID]
 	scheduler.Schedule = slices.Delete(scheduler.Schedule, processID, processID+1)
