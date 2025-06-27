@@ -1,14 +1,23 @@
 package tui
 
 import (
+	"fmt"
+
 	"github.com/AndochBonin/myDaemon/process"
 	"github.com/AndochBonin/myDaemon/program"
 	tea "github.com/charmbracelet/bubbletea"
 	//"github.com/charmbracelet/lipgloss"
 )
 
+const (
+	schedule = iota
+	programs
+	help
+)
+
 type Model struct {
-	page string
+	page int
+	cursor int
 	scheduler *process.Scheduler
 	programList program.ProgramList
 }
@@ -17,8 +26,9 @@ var programListFile string = "./program/programList.json"
 
 func initialModel() (Model, error) {
 	var m Model
+	m.page = schedule
+	m.cursor = 0
 	m.scheduler = process.GetScheduler()
-	m.page = SchedulePage(m.scheduler)
 	m.scheduler = process.GetScheduler()
 	err := program.ReadPrograms(programListFile, &m.programList)
 
@@ -36,18 +46,68 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 		case "s":
-			m.page = SchedulePage(m.scheduler)
+			if m.page == schedule {
+				break
+			}
+			m.page = schedule
+			m.cursor = 0
 		case "p":
-			m.page = ProgramsPage(m.programList)
+			if m.page == programs {
+				break
+			}
+			m.page = programs
+			m.cursor = 0
 		case "h":
-			m.page = HelpPage()
+			if m.page == help {
+				break
+			}
+			m.page = help
+		case "up":
+			if m.page == programs {
+				m.cursor = max(m.cursor - 1, 0)
+			}
+			if m.page == schedule {
+				m.cursor = max(m.cursor - 1, 0)
+			}
+		case "down":
+			if m.page == programs {
+				m.cursor = min(m.cursor + 1, len(m.programList) - 1)
+			}
+			if m.page == schedule {
+				m.cursor = max(m.cursor + 1, len(m.scheduler.Schedule))
+			}
+		case "d":
+			if m.page == programs {
+				err := program.DeleteProgram(programListFile, m.cursor)
+				if err != nil {
+					fmt.Println("\nCould not delete program")
+					break
+				}
+				program.ReadPrograms(programListFile, &m.programList)
+				m.cursor = max(m.cursor - 1, 0)
+			}
+			if m.page == schedule {
+				err := m.scheduler.RemoveProcess(m.cursor, true)
+				if err != nil {
+					fmt.Println("\nCould not delete process")
+				}
+			}
 		}
 	}
 	return m, nil
 }
 
 func (m Model) View() string {
-	return Header() + m.page + Footer()
+	view := ""
+	switch m.page {
+	case schedule:
+		view = m.SchedulePage()
+	case programs:
+		view = m.ProgramsPage()
+	case help:
+		view = m.HelpPage()
+	}
+	return Header() + view + Footer()
 }
 
 func Run() error {
@@ -60,40 +120,49 @@ func Run() error {
 	return runErr
 }
 
-func SchedulePage(scheduler *process.Scheduler) string {
-	s := "Schedule\n\n"
+func (m Model) SchedulePage() string {
+	pageTitle := "Schedule\n\n"
 	//shows current process (and progress), rest of schedule (remove process)
 	processes := ""
-	if scheduler == nil {
-		return s
+	if m.scheduler == nil {
+		return pageTitle
 	}
-	for _, process := range(scheduler.Schedule) {
-		processes += process.Program.Name + "\n"
+	for i, process := range(m.scheduler.Schedule) {
+		cursor := " "
+		if (m.cursor == i) {
+			cursor = ">"
+		} 
+		processes += cursor + process.Program.Name + " " + process.StartTime.String() + " - " + process.EndTime.String() + "\n"
 	}
-	return s + processes
+	return pageTitle + processes
 }
 
-func ProgramsPage(programList program.ProgramList) string {
-	s := "Programs\n\n"
+func (m Model) ProgramsPage() string {
+	pageTitle := "Programs\n"
+	pageDescription := "schedule process [enter] / new program [n] / edit program [e] / delete program [d]\n\n"
 	// programs: shows list of programs programs (actions: add process, delete program, edit programs, create program)
 	programs := ""
-	for _, program := range(programList) {
-		programs += program.Name + "\n"
+	for i, program := range(m.programList) {
+		cursor := " "
+		if i == m.cursor {
+			cursor = ">"
+		}
+		programs += cursor + program.Name + "\n"
 	}
-	return s + programs
+	return pageTitle + pageDescription + programs
 }
 
-func HelpPage() string {
+func (m Model) HelpPage() string {
 	title := "Help\n\n"
 	// help: explains myDaemon, programs, processes, and the scheduler
-	description := "myDaemon is a process manager. Not a todo app.\n\n" 
+	description := "myDaemon: A process manager. Not a todo app.\n\n" 
 
-	programs := "Program: a set of whitelisted applications\n\n"
+	programs := "Program: A set of whitelisted applications\n\n"
 
-	processes := "Process: the execution of a programs for a specified duration\n" + 
-				 "during this period myDaemon kills all applications not listed in the program whitelist.\n\n"
+	processes := "Process: The execution of a Program for a specified duration.\n" + 
+				 "         During this period myDaemon kills all applications not listed in the Program whitelist.\n\n"
 
-	schedule := "Schedule: processes can be scheduled and can be recurring. The scheduler manages this." 
+	schedule := "Schedule: A time sorted sequence of non-overlapping Processes\n" 
 
 	return title + description + programs + processes + schedule
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/AndochBonin/myDaemon/process"
 	"github.com/AndochBonin/myDaemon/program"
@@ -16,7 +17,7 @@ func main() {
 
 	schedule := process.GetScheduler()
 
-	schedule.AddProcess(process.Process{Program: testProgram})
+	schedule.AddProcess(process.Process{Program: testProgram, StartTime: time.Now(), EndTime: time.Now().Add(time.Minute * 2)})
 
 	err := tui.Run()
 
