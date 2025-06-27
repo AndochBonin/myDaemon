@@ -13,6 +13,9 @@ const (
 	schedule = iota
 	programs
 	help
+	addProcess
+	newProgram
+	editProgram
 )
 
 type Model struct {
@@ -92,6 +95,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					fmt.Println("\nCould not delete process")
 				}
 			}
+		case "e":
+			if m.page == programs {
+				m.page = editProgram
+			}
 		}
 	}
 	return m, nil
@@ -106,6 +113,8 @@ func (m Model) View() string {
 		view = m.ProgramsPage()
 	case help:
 		view = m.HelpPage()
+	case editProgram:
+		view = m.EditProgramPage() 
 	}
 	return Header() + view + Footer()
 }
@@ -120,7 +129,17 @@ func Run() error {
 	return runErr
 }
 
-func (m Model) SchedulePage() string {
+func Header() string {
+    s := "myDaemon\n\n" + "Schedule [s] / Programs [p] / Help [h]\n\n"
+	return s
+}
+
+func Footer() string {
+	s := "\n\npress q or ctrl+c to exit"
+	return s
+}
+
+func (m *Model) SchedulePage() string {
 	pageTitle := "Schedule\n\n"
 	//shows current process (and progress), rest of schedule (remove process)
 	processes := ""
@@ -137,7 +156,7 @@ func (m Model) SchedulePage() string {
 	return pageTitle + processes
 }
 
-func (m Model) ProgramsPage() string {
+func (m *Model) ProgramsPage() string {
 	pageTitle := "Programs\n"
 	pageDescription := "schedule process [enter] / new program [n] / edit program [e] / delete program [d]\n\n"
 	// programs: shows list of programs programs (actions: add process, delete program, edit programs, create program)
@@ -152,7 +171,7 @@ func (m Model) ProgramsPage() string {
 	return pageTitle + pageDescription + programs
 }
 
-func (m Model) HelpPage() string {
+func (m *Model) HelpPage() string {
 	title := "Help\n\n"
 	// help: explains myDaemon, programs, processes, and the scheduler
 	description := "myDaemon: A process manager. Not a todo app.\n\n" 
@@ -167,12 +186,27 @@ func (m Model) HelpPage() string {
 	return title + description + programs + processes + schedule
 }
 
-func Header() string {
-    s := "myDaemon\n\n" + "Schedule [s] / Programs [p] / Help [h]\n\n"
-	return s
+func (m *Model) AddProcessPage() string {
+	return ""
 }
 
-func Footer() string {
-	s := "\n\npress q or ctrl+c to exit"
-	return s
+func (m *Model) NewProgramPage() string {
+	pageTitle := "New Program\n"
+	pageDescription := "create a new program\n\n"
+	
+	return pageTitle + pageDescription
+}
+
+func (m *Model) EditProgramPage() string {
+	pageTitle := "Edit Program\n\n"
+	program := m.programList[m.cursor]
+	programName := "Program Name: " + program.Name + "\n"
+	programWhitelist := "Program Whitelist: "
+	for i, uri := range(program.URIWhitelist) {
+		programWhitelist += uri
+		if i < len(program.URIWhitelist) - 1 {
+			programWhitelist += ", "
+		}
+	}
+	return pageTitle + programName + programWhitelist
 }
