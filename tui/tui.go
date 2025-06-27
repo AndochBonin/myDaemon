@@ -77,7 +77,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor = min(m.cursor + 1, len(m.programList) - 1)
 			}
 			if m.page == schedule {
-				m.cursor = max(m.cursor + 1, len(m.scheduler.Schedule))
+				m.cursor = min(m.cursor + 1, len(m.scheduler.Schedule) - 1)
 			}
 		case "d":
 			if m.page == programs {
