@@ -2,23 +2,36 @@ package tui
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/AndochBonin/myDaemon/process"
 	"github.com/AndochBonin/myDaemon/program"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	//"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss"
 )
 
 const (
 	schedule = iota
 	programs
 	help
-	addProcess
-	newProgram
+	processDetails
+	addProgram
 	editProgram
 )
 
+var (
+	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	noStyle             = lipgloss.NewStyle()
+	cursorStyle         = focusedStyle
+)
+
 type Model struct {
+	programDetails struct{
+		programName textinput.Model
+		programWhitelist textinput.Model
+		focused int
+	}
 	page int
 	cursor int
 	scheduler *process.Scheduler
@@ -29,6 +42,7 @@ var programListFile string = "./program/programList.json"
 
 func initialModel() (Model, error) {
 	var m Model
+	m.programDetails.focused = 0
 	m.page = schedule
 	m.cursor = 0
 	m.scheduler = process.GetScheduler()
@@ -43,13 +57,19 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
+			if m.page == editProgram || m.page == addProgram {
+				break
+			}
 			return m, tea.Quit
 		case "s":
 			if m.page == schedule {
+				break
+			} else if m.page == editProgram || m.page == addProgram  {
 				break
 			}
 			m.page = schedule
@@ -57,11 +77,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "p":
 			if m.page == programs {
 				break
+			} else if m.page == editProgram || m.page == addProgram  {
+				break
 			}
 			m.page = programs
 			m.cursor = 0
 		case "h":
 			if m.page == help {
+				break
+			} else if m.page == editProgram || m.page == addProgram  {
 				break
 			}
 			m.page = help
@@ -95,13 +119,64 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					fmt.Println("\nCould not delete process")
 				}
 			}
+		case "n":
+			if m.page == programs {
+				m.page = addProgram
+				cmd := m.initProgramDetailsInput(program.Program{})
+				return m, cmd
+			}
 		case "e":
 			if m.page == programs {
 				m.page = editProgram
+				cmd := m.initProgramDetailsInput(m.programList[m.cursor])
+				return m, cmd
+			}
+		case "esc":
+			if m.page == editProgram || m.page == addProgram  {
+				m.page = programs
+			}
+		case "enter":
+			if m.page == editProgram || m.page == addProgram  {
+				switch m.programDetails.focused {
+				case 0:
+					m.programDetails.focused = 1
+					cmd := m.programDetails.programWhitelist.Focus()
+					m.programDetails.programWhitelist.PromptStyle = focusedStyle
+					m.programDetails.programWhitelist.TextStyle = focusedStyle
+					
+					m.programDetails.programName.Blur()
+					m.programDetails.programName.PromptStyle = noStyle
+					m.programDetails.programName.TextStyle = noStyle
+					return m, cmd
+				case 1:
+					name := m.programDetails.programName.Value() 
+					whitelist := strings.Split(m.programDetails.programWhitelist.Value(), ",")
+					for i, uri := range(whitelist) {
+						whitelist[i] = strings.Trim(uri, " ")
+					}
+					newProgram := program.Program{Name: name, URIWhitelist: whitelist}
+					var err error
+					switch m.page {
+					case editProgram:
+						err = program.UpdateProgram(programListFile, m.cursor, newProgram)
+					case addProgram:
+						err = program.CreateProgram(programListFile, newProgram)
+					}
+					if err != nil {
+						fmt.Println("\nCould not add program")
+					}
+					program.ReadPrograms(programListFile, &m.programList)
+					m.page = programs
+					m.programDetails.focused = 0
+				}
 			}
 		}
 	}
-	return m, nil
+	var cmd1, cmd2 tea.Cmd
+	m.programDetails.programName, cmd1 = m.programDetails.programName.Update(msg)
+	m.programDetails.programWhitelist, cmd2 = m.programDetails.programWhitelist.Update(msg)
+	cmd := tea.Batch(cmd1, cmd2)
+	return m, cmd
 }
 
 func (m Model) View() string {
@@ -113,8 +188,8 @@ func (m Model) View() string {
 		view = m.ProgramsPage()
 	case help:
 		view = m.HelpPage()
-	case editProgram:
-		view = m.EditProgramPage() 
+	case addProgram, editProgram:
+		view = m.ProgramDetailsPage() 
 	}
 	return Header() + view + Footer()
 }
@@ -166,7 +241,14 @@ func (m *Model) ProgramsPage() string {
 		if i == m.cursor {
 			cursor = ">"
 		}
-		programs += cursor + program.Name + "\n"
+		var whitelist string
+		for j, uri := range(program.URIWhitelist) {
+			whitelist += uri
+			if j < len(program.URIWhitelist) - 1 {
+				whitelist += ", "
+			}
+		}
+		programs += cursor + program.Name + ": " + whitelist + "\n"
 	}
 	return pageTitle + pageDescription + programs
 }
@@ -190,23 +272,35 @@ func (m *Model) AddProcessPage() string {
 	return ""
 }
 
-func (m *Model) NewProgramPage() string {
-	pageTitle := "New Program\n"
-	pageDescription := "create a new program\n\n"
+func (m *Model) ProgramDetailsPage() string {
+	pageTitle := "Program Details\n\n"
 	
-	return pageTitle + pageDescription
+	return pageTitle + "\nProgram Name:\n" + m.programDetails.programName.View() + 
+		   "\n\nProgram Whitelist:\n" + m.programDetails.programWhitelist.View()
 }
 
-func (m *Model) EditProgramPage() string {
-	pageTitle := "Edit Program\n\n"
-	program := m.programList[m.cursor]
-	programName := "Program Name: " + program.Name + "\n"
-	programWhitelist := "Program Whitelist: "
+func (m *Model) initProgramDetailsInput(program program.Program) tea.Cmd {
+	programName := textinput.New()
+	programName.Placeholder = program.Name
+	programName.Cursor.Style = cursorStyle
+	programName.PromptStyle = focusedStyle
+	programName.TextStyle = focusedStyle
+	programName.CharLimit = 156
+	programName.Width = 20
+	m.programDetails.programName = programName
+	
+	programWhitelist := textinput.New()
+	programWhitelist.Placeholder = ""
 	for i, uri := range(program.URIWhitelist) {
-		programWhitelist += uri
-		if i < len(program.URIWhitelist) - 1 {
-			programWhitelist += ", "
+		programWhitelist.Placeholder += uri
+		if i < len(program.URIWhitelist) - 1{
+			programWhitelist.Placeholder += ", "
 		}
 	}
-	return pageTitle + programName + programWhitelist
+	programWhitelist.Cursor.Style = cursorStyle
+	programWhitelist.CharLimit = 156
+	programWhitelist.Width = 20
+	m.programDetails.programWhitelist = programWhitelist
+	
+	return m.programDetails.programName.Focus()
 }
