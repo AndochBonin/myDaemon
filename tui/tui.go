@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/AndochBonin/myDaemon/process"
 	"github.com/AndochBonin/myDaemon/program"
@@ -15,26 +16,31 @@ const (
 	schedule = iota
 	programs
 	help
-	processDetails
+	addProcess
 	addProgram
 	editProgram
 )
 
 var (
-	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	noStyle             = lipgloss.NewStyle()
-	cursorStyle         = focusedStyle
+	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	noStyle      = lipgloss.NewStyle()
+	cursorStyle  = focusedStyle
 )
 
 type Model struct {
-	programDetails struct{
-		programName textinput.Model
+	programDetails struct {
+		programName      textinput.Model
 		programWhitelist textinput.Model
-		focused int
+		focused          int
 	}
-	page int
-	cursor int
-	scheduler *process.Scheduler
+	processDetails struct {
+		startTime textinput.Model
+		endTime   textinput.Model
+		focused   int
+	}
+	page        int
+	cursor      int
+	scheduler   *process.Scheduler
 	programList program.ProgramList
 }
 
@@ -62,46 +68,40 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
-			if m.page == editProgram || m.page == addProgram {
+			if m.page == editProgram || m.page == addProgram || m.page == addProcess {
 				break
 			}
 			return m, tea.Quit
 		case "s":
-			if m.page == schedule {
-				break
-			} else if m.page == editProgram || m.page == addProgram  {
+			if m.page == schedule || m.page == editProgram || m.page == addProgram || m.page == addProcess {
 				break
 			}
 			m.page = schedule
 			m.cursor = 0
 		case "p":
-			if m.page == programs {
-				break
-			} else if m.page == editProgram || m.page == addProgram  {
+			if m.page == programs || m.page == editProgram || m.page == addProgram || m.page == addProcess {
 				break
 			}
 			m.page = programs
 			m.cursor = 0
 		case "h":
-			if m.page == help {
-				break
-			} else if m.page == editProgram || m.page == addProgram  {
+			if m.page == help || m.page == editProgram || m.page == addProgram || m.page == addProcess {
 				break
 			}
 			m.page = help
 		case "up":
 			if m.page == programs {
-				m.cursor = max(m.cursor - 1, 0)
+				m.cursor = max(m.cursor-1, 0)
 			}
 			if m.page == schedule {
-				m.cursor = max(m.cursor - 1, 0)
+				m.cursor = max(m.cursor-1, 0)
 			}
 		case "down":
 			if m.page == programs {
-				m.cursor = min(m.cursor + 1, len(m.programList) - 1)
+				m.cursor = min(m.cursor+1, len(m.programList)-1)
 			}
 			if m.page == schedule {
-				m.cursor = min(m.cursor + 1, len(m.scheduler.Schedule) - 1)
+				m.cursor = min(m.cursor+1, len(m.scheduler.Schedule)-1)
 			}
 		case "d":
 			if m.page == programs {
@@ -111,7 +111,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					break
 				}
 				program.ReadPrograms(programListFile, &m.programList)
-				m.cursor = max(m.cursor - 1, 0)
+				m.cursor = max(m.cursor-1, 0)
 			}
 			if m.page == schedule {
 				err := m.scheduler.RemoveProcess(m.cursor, true)
@@ -132,26 +132,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, cmd
 			}
 		case "esc":
-			if m.page == editProgram || m.page == addProgram  {
+			if m.page == editProgram || m.page == addProgram || m.page == addProcess {
 				m.page = programs
 			}
 		case "enter":
-			if m.page == editProgram || m.page == addProgram  {
+			switch m.page {
+			case editProgram, addProgram:
 				switch m.programDetails.focused {
 				case 0:
 					m.programDetails.focused = 1
 					cmd := m.programDetails.programWhitelist.Focus()
 					m.programDetails.programWhitelist.PromptStyle = focusedStyle
 					m.programDetails.programWhitelist.TextStyle = focusedStyle
-					
+
 					m.programDetails.programName.Blur()
 					m.programDetails.programName.PromptStyle = noStyle
 					m.programDetails.programName.TextStyle = noStyle
 					return m, cmd
 				case 1:
-					name := m.programDetails.programName.Value() 
+					name := m.programDetails.programName.Value()
 					whitelist := strings.Split(m.programDetails.programWhitelist.Value(), ",")
-					for i, uri := range(whitelist) {
+					for i, uri := range whitelist {
 						whitelist[i] = strings.Trim(uri, " ")
 					}
 					newProgram := program.Program{Name: name, URIWhitelist: whitelist}
@@ -169,13 +170,52 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.page = programs
 					m.programDetails.focused = 0
 				}
+			case programs:
+				m.page = addProcess
+				cmd := m.initProcessDetailsInput()
+				return m, cmd
+			case addProcess:
+				switch m.processDetails.focused {
+				case 0:
+					m.processDetails.focused = 1
+					cmd := m.processDetails.endTime.Focus()
+					m.processDetails.endTime.PromptStyle = focusedStyle
+					m.processDetails.endTime.TextStyle = focusedStyle
+
+					m.processDetails.startTime.Blur()
+					m.processDetails.startTime.PromptStyle = noStyle
+					m.processDetails.startTime.TextStyle = noStyle
+					return m, cmd
+				case 1:
+					startTime, startErr := time.Parse("15:04", m.processDetails.startTime.Value())
+					endTime, endErr := time.Parse("15:04", m.processDetails.endTime.Value())
+					startTime = startTime.AddDate(time.Now().Year(), int(time.Now().Month()) - 1, time.Now().Day() - 1)
+					endTime = endTime.AddDate(time.Now().Year(), int(time.Now().Month()) - 1, time.Now().Day() - 1)
+					
+					if startErr != nil || endErr != nil {
+						fmt.Printf("\nTime parse error: %v, %v", startErr, endErr)
+						return m, nil
+					}
+					newProcess := process.Process{Program: m.programList[m.cursor], StartTime: startTime, EndTime: endTime}
+					scheduleErr := m.scheduler.AddProcess(newProcess)
+					if scheduleErr != nil {
+						fmt.Println("\nCould not add process")
+						return m, nil
+					}
+					m.page = programs
+					m.processDetails.focused = 0
+				}
 			}
+
 		}
 	}
-	var cmd1, cmd2 tea.Cmd
+	var cmd1, cmd2, cmd3, cmd4 tea.Cmd
 	m.programDetails.programName, cmd1 = m.programDetails.programName.Update(msg)
 	m.programDetails.programWhitelist, cmd2 = m.programDetails.programWhitelist.Update(msg)
-	cmd := tea.Batch(cmd1, cmd2)
+
+	m.processDetails.startTime, cmd3 = m.processDetails.startTime.Update(msg)
+	m.processDetails.endTime, cmd4 = m.processDetails.endTime.Update(msg)
+	cmd := tea.Batch(cmd1, cmd2, cmd3, cmd4)
 	return m, cmd
 }
 
@@ -189,7 +229,9 @@ func (m Model) View() string {
 	case help:
 		view = m.HelpPage()
 	case addProgram, editProgram:
-		view = m.ProgramDetailsPage() 
+		view = m.ProgramDetailsPage()
+	case addProcess:
+		view = m.ProcessDetailsPage()
 	}
 	return Header() + view + Footer()
 }
@@ -205,7 +247,7 @@ func Run() error {
 }
 
 func Header() string {
-    s := "myDaemon\n\n" + "Schedule [s] / Programs [p] / Help [h]\n\n"
+	s := "myDaemon\n\n" + "Schedule [s] / Programs [p] / Help [h]\n\n"
 	return s
 }
 
@@ -221,12 +263,14 @@ func (m *Model) SchedulePage() string {
 	if m.scheduler == nil {
 		return pageTitle
 	}
-	for i, process := range(m.scheduler.Schedule) {
+	for i, process := range m.scheduler.Schedule {
 		cursor := " "
-		if (m.cursor == i) {
+		if m.cursor == i {
 			cursor = ">"
-		} 
-		processes += cursor + process.Program.Name + " " + process.StartTime.String() + " - " + process.EndTime.String() + "\n"
+		}
+		// reference time: Jan 2 15:04:05 2006 MST
+		processes += cursor + process.Program.Name + ": " + process.StartTime.Format("02/01/2006 15:04") + " - " + 
+		process.EndTime.Format("02/01/2006 15:04") + "\n"
 	}
 	return pageTitle + processes
 }
@@ -236,15 +280,15 @@ func (m *Model) ProgramsPage() string {
 	pageDescription := "schedule process [enter] / new program [n] / edit program [e] / delete program [d]\n\n"
 	// programs: shows list of programs programs (actions: add process, delete program, edit programs, create program)
 	programs := ""
-	for i, program := range(m.programList) {
+	for i, program := range m.programList {
 		cursor := " "
 		if i == m.cursor {
 			cursor = ">"
 		}
 		var whitelist string
-		for j, uri := range(program.URIWhitelist) {
+		for j, uri := range program.URIWhitelist {
 			whitelist += uri
-			if j < len(program.URIWhitelist) - 1 {
+			if j < len(program.URIWhitelist)-1 {
 				whitelist += ", "
 			}
 		}
@@ -256,27 +300,23 @@ func (m *Model) ProgramsPage() string {
 func (m *Model) HelpPage() string {
 	title := "Help\n\n"
 	// help: explains myDaemon, programs, processes, and the scheduler
-	description := "myDaemon: A process manager. Not a todo app.\n\n" 
+	description := "myDaemon: A process manager. Not a todo app.\n\n"
 
 	programs := "Program: A set of whitelisted applications\n\n"
 
-	processes := "Process: The execution of a Program for a specified duration.\n" + 
-				 "         During this period myDaemon kills all applications not listed in the Program whitelist.\n\n"
+	processes := "Process: The execution of a Program for a specified duration.\n" +
+		"         During this period myDaemon kills all applications not listed in the Program whitelist.\n\n"
 
-	schedule := "Schedule: A time sorted sequence of non-overlapping Processes\n" 
+	schedule := "Schedule: A time sorted sequence of non-overlapping Processes\n"
 
 	return title + description + programs + processes + schedule
 }
 
-func (m *Model) AddProcessPage() string {
-	return ""
-}
-
 func (m *Model) ProgramDetailsPage() string {
 	pageTitle := "Program Details\n\n"
-	
-	return pageTitle + "\nProgram Name:\n" + m.programDetails.programName.View() + 
-		   "\n\nProgram Whitelist:\n" + m.programDetails.programWhitelist.View()
+
+	return pageTitle + "\nProgram Name:\n" + m.programDetails.programName.View() +
+		"\n\nProgram Whitelist:\n" + m.programDetails.programWhitelist.View()
 }
 
 func (m *Model) initProgramDetailsInput(program program.Program) tea.Cmd {
@@ -288,12 +328,12 @@ func (m *Model) initProgramDetailsInput(program program.Program) tea.Cmd {
 	programName.CharLimit = 156
 	programName.Width = 20
 	m.programDetails.programName = programName
-	
+
 	programWhitelist := textinput.New()
 	programWhitelist.Placeholder = ""
-	for i, uri := range(program.URIWhitelist) {
+	for i, uri := range program.URIWhitelist {
 		programWhitelist.Placeholder += uri
-		if i < len(program.URIWhitelist) - 1{
+		if i < len(program.URIWhitelist)-1 {
 			programWhitelist.Placeholder += ", "
 		}
 	}
@@ -301,6 +341,36 @@ func (m *Model) initProgramDetailsInput(program program.Program) tea.Cmd {
 	programWhitelist.CharLimit = 156
 	programWhitelist.Width = 20
 	m.programDetails.programWhitelist = programWhitelist
-	
+
 	return m.programDetails.programName.Focus()
+}
+
+func (m *Model) ProcessDetailsPage() string {
+	pageTitle := "Process Details\n\n"
+
+	return pageTitle + m.programList[m.cursor].Name +
+		"\n\nStart Time:\n" + m.processDetails.startTime.View() +
+		"\n\nEnd Time:\n" + m.processDetails.endTime.View()
+}
+
+func (m *Model) initProcessDetailsInput() tea.Cmd {
+	startTime := textinput.New()
+	startTime.Placeholder = "00:00"
+	startTime.Cursor.Style = cursorStyle
+	startTime.PromptStyle = focusedStyle
+	startTime.TextStyle = focusedStyle
+	startTime.CharLimit = 10
+	startTime.Width = 10
+	m.processDetails.startTime = startTime
+
+	endTime := textinput.New()
+	endTime.Placeholder = "00:00"
+	endTime.Cursor.Style = cursorStyle
+	endTime.PromptStyle = focusedStyle
+	endTime.TextStyle = focusedStyle
+	endTime.CharLimit = 10
+	endTime.Width = 10
+	m.processDetails.endTime = endTime
+
+	return m.processDetails.startTime.Focus()
 }
