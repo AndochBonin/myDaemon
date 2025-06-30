@@ -105,6 +105,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "d":
 			if m.page == programs {
+				if len(m.programList) == 0 {
+					return m, nil
+				}
 				err := program.DeleteProgram(programListFile, m.cursor)
 				if err != nil {
 					fmt.Println("\nCould not delete program")
@@ -127,6 +130,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "e":
 			if m.page == programs {
+				if len(m.programList) == 0 {
+					return m, nil
+				}
 				m.page = editProgram
 				cmd := m.initProgramDetailsInput(m.programList[m.cursor])
 				return m, cmd
