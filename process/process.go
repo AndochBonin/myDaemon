@@ -5,7 +5,6 @@ import (
 	"slices"
 	"sync"
 	"time"
-
 	"github.com/AndochBonin/myDaemon/program"
 )
 
@@ -18,7 +17,7 @@ var (
 type Process struct {
 	Program   program.Program
 	StartTime time.Time
-	EndTime   time.Time
+	Duration time.Duration
 	IsRecurring bool
 }
 
@@ -50,14 +49,16 @@ func (scheduler *Scheduler) AddProcess(process Process) error {
 	}
 
 	if insertIdx > 0 {
-		previousProcessEndtime := scheduler.Schedule[insertIdx-1].EndTime
+		previousProcess := scheduler.Schedule[insertIdx-1]
+		previousProcessEndtime := previousProcess.StartTime.Add(previousProcess.Duration)
 		if previousProcessEndtime.Equal(process.StartTime) || previousProcessEndtime.After(process.StartTime) {
 			return ErrSchedule
 		}
 	}
 	if insertIdx < len(scheduler.Schedule) {
 		nextProcessStartTime := scheduler.Schedule[insertIdx].StartTime
-		if process.EndTime.Equal(nextProcessStartTime) || process.EndTime.After(nextProcessStartTime) {
+		if process.StartTime.Add(process.Duration).Equal(nextProcessStartTime) || 
+		   process.StartTime.Add(process.Duration).After(nextProcessStartTime) {
 			return ErrSchedule
 		}
 	}
@@ -75,7 +76,6 @@ func (scheduler *Scheduler) RemoveProcess(processID int, endRecurrence bool) err
 	if process.IsRecurring && !endRecurrence {
 		timeOffset := time.Hour * 24
 		process.StartTime = process.StartTime.Add(timeOffset)
-		process.EndTime = process.EndTime.Add(timeOffset)
 		err := scheduler.AddProcess(process)
 		if err != nil {
 			return err
@@ -87,8 +87,8 @@ func (scheduler *Scheduler) RemoveProcess(processID int, endRecurrence bool) err
 func (scheduler *Scheduler) UpdateSchedule() error {
 	if len(scheduler.Schedule) == 0 {
 		return nil
-	} else if time.Now().After(scheduler.Schedule[0].EndTime) {
-		return scheduler.RemoveProcess(0, false)
+	} else if process := scheduler.Schedule[0]; time.Now().After(process.StartTime.Add(process.Duration)) {
+		return scheduler.RemoveProcess(0, !process.IsRecurring)
 	}
 	return nil
 }
@@ -100,8 +100,4 @@ func (scheduler *Scheduler) GetCurrentProcess() *Process {
 		return &scheduler.Schedule[0]
 	}
 	return nil
-}
-
-func isValidProcess(process Process) bool {
-	return process.StartTime.Before(process.EndTime)
 }

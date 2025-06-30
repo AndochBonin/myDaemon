@@ -43,7 +43,7 @@ func newMockProcess(t *testing.T, name string, startOffset time.Duration, durati
 	return Process{
 		Program:     program.Program{Name: name},
 		StartTime:   start,
-		EndTime:     start.Add(duration),
+		Duration: duration,
 		IsRecurring: isRecurring,
 	}
 }
@@ -59,7 +59,6 @@ func TestAddProcess(t *testing.T) {
 	processSameTimeLater := Process{
 		Program:     program.Program{Name: "SAME TIME LATER"},
 		StartTime:   processStartLater.StartTime,
-		EndTime:     processStartLater.EndTime.Add(time.Hour),
 		IsRecurring: false,
 	}
 
@@ -116,11 +115,11 @@ func TestRemoveProcess(t *testing.T) {
 			t.Errorf("Unexpected error: %v", err)
 		}
 		err = scheduler.RemoveProcess(-1, true)
-		if err != ErrSchedule {
+		if err != nil {
 			t.Errorf("Expected %v got %v instead", ErrSchedule, err)
 		}
 		err = scheduler.RemoveProcess(1, true)
-		if err != ErrSchedule {
+		if err != nil {
 			t.Errorf("Expected %v got %v instead", ErrSchedule, err)
 		}
 		checkSchedule(t, scheduler.Schedule, []Process{process})
@@ -145,7 +144,6 @@ func TestRemoveProcess(t *testing.T) {
 			t.Errorf("Unexpected errors: %v, %v", addErr, removeErr)
 		}
 		process.StartTime = process.StartTime.Add(time.Hour * 24)
-		process.EndTime = process.EndTime.Add(time.Hour * 24)
 		checkSchedule(t, scheduler.Schedule, []Process{process})
 	})
 
@@ -166,7 +164,6 @@ func TestRemoveProcess(t *testing.T) {
 			t.Errorf("Unexpected error: %v", removeErr)
 		}
 		testProcess.StartTime = testProcess.StartTime.Add(time.Hour * 24)
-		testProcess.EndTime = testProcess.EndTime.Add(time.Hour * 24)
 
 		// recurring should slot between later and much later
 		expected := []Process{beforeTestProcess, afterTestProcess, testProcess, afterRecurredProcess}
