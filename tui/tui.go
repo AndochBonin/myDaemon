@@ -35,7 +35,7 @@ type Model struct {
 	}
 	processDetails struct {
 		startTime textinput.Model
-		endTime   textinput.Model
+		duration   textinput.Model
 		focused   int
 	}
 	page        int
@@ -178,9 +178,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				switch m.processDetails.focused {
 				case 0:
 					m.processDetails.focused = 1
-					cmd := m.processDetails.endTime.Focus()
-					m.processDetails.endTime.PromptStyle = focusedStyle
-					m.processDetails.endTime.TextStyle = focusedStyle
+					cmd := m.processDetails.duration.Focus()
+					m.processDetails.duration.PromptStyle = focusedStyle
+					m.processDetails.duration.TextStyle = focusedStyle
 
 					m.processDetails.startTime.Blur()
 					m.processDetails.startTime.PromptStyle = noStyle
@@ -188,15 +188,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, cmd
 				case 1:
 					startTime, startErr := time.Parse("15:04", m.processDetails.startTime.Value())
-					endTime, endErr := time.Parse("15:04", m.processDetails.endTime.Value())
+					duration, endErr := time.ParseDuration(m.processDetails.duration.Value())
 					startTime = startTime.AddDate(time.Now().Year(), int(time.Now().Month()) - 1, time.Now().Day() - 1)
-					endTime = endTime.AddDate(time.Now().Year(), int(time.Now().Month()) - 1, time.Now().Day() - 1)
-					
+
 					if startErr != nil || endErr != nil {
 						fmt.Printf("\nTime parse error: %v, %v", startErr, endErr)
 						return m, nil
 					}
-					newProcess := process.Process{Program: m.programList[m.cursor], StartTime: startTime, EndTime: endTime}
+					newProcess := process.Process{Program: m.programList[m.cursor], StartTime: startTime, Duration: duration}
 					scheduleErr := m.scheduler.AddProcess(newProcess)
 					if scheduleErr != nil {
 						fmt.Println("\nCould not add process")
@@ -214,7 +213,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.programDetails.programWhitelist, cmd2 = m.programDetails.programWhitelist.Update(msg)
 
 	m.processDetails.startTime, cmd3 = m.processDetails.startTime.Update(msg)
-	m.processDetails.endTime, cmd4 = m.processDetails.endTime.Update(msg)
+	m.processDetails.duration, cmd4 = m.processDetails.duration.Update(msg)
 	cmd := tea.Batch(cmd1, cmd2, cmd3, cmd4)
 	return m, cmd
 }
@@ -270,7 +269,7 @@ func (m *Model) SchedulePage() string {
 		}
 		// reference time: Jan 2 15:04:05 2006 MST
 		processes += cursor + process.Program.Name + ": " + process.StartTime.Format("02/01/2006 15:04") + " - " + 
-		process.EndTime.Format("02/01/2006 15:04") + "\n"
+		process.Duration.Truncate(time.Minute).String() + "\n"
 	}
 	return pageTitle + processes
 }
@@ -350,7 +349,7 @@ func (m *Model) ProcessDetailsPage() string {
 
 	return pageTitle + m.programList[m.cursor].Name +
 		"\n\nStart Time:\n" + m.processDetails.startTime.View() +
-		"\n\nEnd Time:\n" + m.processDetails.endTime.View()
+		"\n\nDuration:\n" + m.processDetails.duration.View()
 }
 
 func (m *Model) initProcessDetailsInput() tea.Cmd {
@@ -363,14 +362,14 @@ func (m *Model) initProcessDetailsInput() tea.Cmd {
 	startTime.Width = 10
 	m.processDetails.startTime = startTime
 
-	endTime := textinput.New()
-	endTime.Placeholder = "00:00"
-	endTime.Cursor.Style = cursorStyle
-	endTime.PromptStyle = focusedStyle
-	endTime.TextStyle = focusedStyle
-	endTime.CharLimit = 10
-	endTime.Width = 10
-	m.processDetails.endTime = endTime
+	duration := textinput.New()
+	duration.Placeholder = "0h0m"
+	duration.Cursor.Style = cursorStyle
+	duration.PromptStyle = focusedStyle
+	duration.TextStyle = focusedStyle
+	duration.CharLimit = 10
+	duration.Width = 10
+	m.processDetails.duration = duration
 
 	return m.processDetails.startTime.Focus()
 }

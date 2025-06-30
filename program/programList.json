@@ -1,1 +1,17 @@
-[]
+[
+    {
+        "Name": "lock in",
+        "URIWhitelist": [
+            "spotify",
+            "brave",
+            "vscode"
+        ]
+    },
+    {
+        "Name": "why not",
+        "URIWhitelist": [
+            "notion",
+            "obsidian"
+        ]
+    }
+]
