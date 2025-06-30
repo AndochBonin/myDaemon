@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"errors"
 	"strings"
 	"time"
 
@@ -39,6 +40,7 @@ type Model struct {
 	}
 	page        int
 	cursor      int
+	err error
 	scheduler   *process.Scheduler
 	programList program.ProgramList
 }
@@ -109,7 +111,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				err := program.DeleteProgram(programListFile, m.cursor)
 				if err != nil {
-					// handle with error property on model
+					m.err = err
 					break
 				}
 				program.ReadPrograms(programListFile, &m.programList)
@@ -118,7 +120,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.page == schedule {
 				err := m.scheduler.RemoveProcess(m.cursor, true)
 				if err != nil {
-					// handle with error property on model
+					m.err = err
 				}
 			}
 		case "n":
@@ -169,7 +171,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						err = program.CreateProgram(programListFile, newProgram)
 					}
 					if err != nil {
-						// handle with error property on model
+						m.err = err
 					}
 					program.ReadPrograms(programListFile, &m.programList)
 					m.page = programs
@@ -197,12 +199,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					startTime = startTime.AddDate(time.Now().Year(), int(time.Now().Month()) - 1, time.Now().Day() - 1)
 
 					if startErr != nil || durationErr != nil {
-						// handle with error property on model	
+						m.err = errors.Join(startErr, durationErr)	
 					} else {
 						newProcess := process.Process{Program: m.programList[m.cursor], StartTime: startTime, Duration: duration}
 						scheduleErr := m.scheduler.AddProcess(newProcess)
 						if scheduleErr != nil {
-							// handle with error property on model
+							m.err = scheduleErr
 						}
 				}
 					m.page = programs
@@ -236,7 +238,7 @@ func (m Model) View() string {
 	case addProcess:
 		view = m.ProcessDetailsPage()
 	}
-	return Header() + view + Footer()
+	return Header() + view + Footer(m.err)
 }
 
 func Run() error {
@@ -254,14 +256,17 @@ func Header() string {
 	return s
 }
 
-func Footer() string {
+func Footer(err error) string {
+	errMessage := ""
+	if err != nil {
+		errMessage = err.Error()
+	}
 	s := "\n\npress q or ctrl+c to exit"
-	return s
+	return "\n" + errMessage + s
 }
 
 func (m *Model) SchedulePage() string {
 	pageTitle := "Schedule\n\n"
-	//shows current process (and progress), rest of schedule (remove process)
 	processes := ""
 	if m.scheduler == nil {
 		return pageTitle
@@ -281,7 +286,7 @@ func (m *Model) SchedulePage() string {
 func (m *Model) ProgramsPage() string {
 	pageTitle := "Programs\n"
 	pageDescription := "schedule process [enter] / new program [n] / edit program [e] / delete program [d]\n\n"
-	// programs: shows list of programs programs (actions: add process, delete program, edit programs, create program)
+	
 	programs := ""
 	for i, program := range m.programList {
 		cursor := " "
@@ -302,7 +307,7 @@ func (m *Model) ProgramsPage() string {
 
 func (m *Model) HelpPage() string {
 	title := "Help\n\n"
-	// help: explains myDaemon, programs, processes, and the scheduler
+	
 	description := "myDaemon: A process manager. Not a todo app.\n\n"
 
 	programs := "Program: A set of whitelisted applications\n\n"
