@@ -178,6 +178,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.programDetails.focused = 0
 				}
 			case programs:
+				if len(m.programList) == 0 {
+					break
+				}
 				m.page = addProcess
 				cmd := m.initProcessDetailsInput()
 				return m, cmd
