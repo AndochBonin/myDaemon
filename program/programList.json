@@ -1,1 +1,9 @@
-[]
+[
+    {
+        "Name": "time parse test",
+        "URIWhitelist": [
+            "test",
+            "more test stuff"
+        ]
+    }
+]

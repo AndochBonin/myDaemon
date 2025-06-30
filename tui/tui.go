@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -110,7 +109,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				err := program.DeleteProgram(programListFile, m.cursor)
 				if err != nil {
-					fmt.Println("\nCould not delete program")
+					// handle with error property on model
 					break
 				}
 				program.ReadPrograms(programListFile, &m.programList)
@@ -119,7 +118,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.page == schedule {
 				err := m.scheduler.RemoveProcess(m.cursor, true)
 				if err != nil {
-					fmt.Println("\nCould not delete process")
+					// handle with error property on model
 				}
 			}
 		case "n":
@@ -170,7 +169,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						err = program.CreateProgram(programListFile, newProgram)
 					}
 					if err != nil {
-						fmt.Println("\nCould not add program")
+						// handle with error property on model
 					}
 					program.ReadPrograms(programListFile, &m.programList)
 					m.page = programs
@@ -194,19 +193,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, cmd
 				case 1:
 					startTime, startErr := time.Parse("15:04", m.processDetails.startTime.Value())
-					duration, endErr := time.ParseDuration(m.processDetails.duration.Value())
+					duration, durationErr := time.ParseDuration(m.processDetails.duration.Value())
 					startTime = startTime.AddDate(time.Now().Year(), int(time.Now().Month()) - 1, time.Now().Day() - 1)
 
-					if startErr != nil || endErr != nil {
-						fmt.Printf("\nTime parse error: %v, %v", startErr, endErr)
-						return m, nil
-					}
-					newProcess := process.Process{Program: m.programList[m.cursor], StartTime: startTime, Duration: duration}
-					scheduleErr := m.scheduler.AddProcess(newProcess)
-					if scheduleErr != nil {
-						fmt.Println("\nCould not add process")
-						return m, nil
-					}
+					if startErr != nil || durationErr != nil {
+						// handle with error property on model	
+					} else {
+						newProcess := process.Process{Program: m.programList[m.cursor], StartTime: startTime, Duration: duration}
+						scheduleErr := m.scheduler.AddProcess(newProcess)
+						if scheduleErr != nil {
+							// handle with error property on model
+						}
+				}
 					m.page = programs
 					m.processDetails.focused = 0
 				}
