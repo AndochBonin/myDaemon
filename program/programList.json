@@ -1,1 +1,10 @@
-[]
+[
+    {
+        "Name": "new program",
+        "URIWhitelist": [
+            "spotify",
+            "brave",
+            "vs"
+        ]
+    }
+]

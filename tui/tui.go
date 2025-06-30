@@ -35,12 +35,12 @@ type Model struct {
 	}
 	processDetails struct {
 		startTime textinput.Model
-		duration   textinput.Model
+		duration  textinput.Model
 		focused   int
 	}
 	page        int
 	cursor      int
-	err error
+	err         error
 	scheduler   *process.Scheduler
 	programList program.ProgramList
 }
@@ -73,6 +73,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 			return m, tea.Quit
+		case "ctrl+r":
+			m.err = nil
+			return m, nil
 		case "s":
 			if m.page == schedule || m.page == editProgram || m.page == addProgram || m.page == addProcess {
 				break
@@ -199,17 +202,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				case 1:
 					startTime, startErr := time.Parse("15:04", m.processDetails.startTime.Value())
 					duration, durationErr := time.ParseDuration(m.processDetails.duration.Value())
-					startTime = startTime.AddDate(time.Now().Year(), int(time.Now().Month()) - 1, time.Now().Day() - 1)
+					startTime = startTime.AddDate(time.Now().Year(), int(time.Now().Month())-1, time.Now().Day()-1)
 
 					if startErr != nil || durationErr != nil {
-						m.err = errors.Join(startErr, durationErr)	
+						m.err = errors.Join(startErr, durationErr)
 					} else {
 						newProcess := process.Process{Program: m.programList[m.cursor], StartTime: startTime, Duration: duration}
 						scheduleErr := m.scheduler.AddProcess(newProcess)
 						if scheduleErr != nil {
 							m.err = scheduleErr
 						}
-				}
+					}
 					m.page = programs
 					m.processDetails.focused = 0
 				}
@@ -280,8 +283,8 @@ func (m *Model) SchedulePage() string {
 			cursor = ">"
 		}
 		// reference time: Jan 2 15:04:05 2006 MST
-		processes += cursor + process.Program.Name + ": " + process.StartTime.Format("02/01/2006 15:04") + " - " + 
-		process.Duration.Truncate(time.Minute).String() + "\n"
+		processes += cursor + process.Program.Name + ": " + process.StartTime.Format("02/01/2006 15:04") + " - " +
+			process.Duration.Truncate(time.Minute).String() + "\n"
 	}
 	return pageTitle + processes
 }
@@ -289,7 +292,7 @@ func (m *Model) SchedulePage() string {
 func (m *Model) ProgramsPage() string {
 	pageTitle := "Programs\n"
 	pageDescription := "schedule process [enter] / new program [n] / edit program [e] / delete program [d]\n\n"
-	
+
 	programs := ""
 	for i, program := range m.programList {
 		cursor := " "
@@ -310,7 +313,7 @@ func (m *Model) ProgramsPage() string {
 
 func (m *Model) HelpPage() string {
 	title := "Help\n\n"
-	
+
 	description := "myDaemon: A process manager. Not a todo app.\n\n"
 
 	programs := "Program: A set of whitelisted applications\n\n"
