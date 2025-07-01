@@ -1,10 +1,39 @@
 [
     {
-        "Name": "new program",
+        "Name": "coding",
+        "URIWhitelist": [
+            "vscode",
+            "sublime"
+        ]
+    },
+    {
+        "Name": "music",
         "URIWhitelist": [
             "spotify",
-            "brave",
-            "vs"
+            "apple music"
+        ]
+    },
+    {
+        "Name": "note taking",
+        "URIWhitelist": [
+            "obsidian",
+            "notion",
+            "vim"
+        ]
+    },
+    {
+        "Name": "gaming",
+        "URIWhitelist": [
+            "minecraft",
+            "apex",
+            "csgo"
+        ]
+    },
+    {
+        "Name": "movies",
+        "URIWhitelist": [
+            "vlc",
+            "brave"
         ]
     }
 ]
