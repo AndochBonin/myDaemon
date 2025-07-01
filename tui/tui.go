@@ -36,6 +36,7 @@ type Model struct {
 	processDetails struct {
 		startTime textinput.Model
 		duration  textinput.Model
+		isRecurring textinput.Model
 		focused   int
 	}
 	page        int
@@ -200,6 +201,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.processDetails.startTime.TextStyle = noStyle
 					return m, cmd
 				case 1:
+					m.processDetails.focused = 2
+					cmd := m.processDetails.isRecurring.Focus()
+					m.processDetails.isRecurring.PromptStyle = focusedStyle
+					m.processDetails.isRecurring.TextStyle = focusedStyle
+
+					m.processDetails.duration.Blur()
+					m.processDetails.duration.PromptStyle = noStyle
+					m.processDetails.duration.TextStyle = noStyle
+					return m, cmd
+				case 2:
 					startTime, startErr := time.Parse("15:04", m.processDetails.startTime.Value())
 					duration, durationErr := time.ParseDuration(m.processDetails.duration.Value())
 					startTime = startTime.AddDate(time.Now().Year(), int(time.Now().Month())-1, time.Now().Day()-1)
@@ -208,6 +219,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.err = errors.Join(startErr, durationErr)
 					} else {
 						newProcess := process.Process{Program: m.programList[m.cursor], StartTime: startTime, Duration: duration}
+						if m.processDetails.isRecurring.Value() == "Y" {
+							newProcess.IsRecurring = true
+						}
 						scheduleErr := m.scheduler.AddProcess(newProcess)
 						if scheduleErr != nil {
 							m.err = scheduleErr
@@ -220,13 +234,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		}
 	}
-	var cmd1, cmd2, cmd3, cmd4 tea.Cmd
+	var cmd1, cmd2, cmd3, cmd4, cmd5 tea.Cmd
 	m.programDetails.programName, cmd1 = m.programDetails.programName.Update(msg)
 	m.programDetails.programWhitelist, cmd2 = m.programDetails.programWhitelist.Update(msg)
 
 	m.processDetails.startTime, cmd3 = m.processDetails.startTime.Update(msg)
 	m.processDetails.duration, cmd4 = m.processDetails.duration.Update(msg)
-	cmd := tea.Batch(cmd1, cmd2, cmd3, cmd4)
+	m.processDetails.isRecurring, cmd5 = m.processDetails.isRecurring.Update(msg)
+	cmd := tea.Batch(cmd1, cmd2, cmd3, cmd4, cmd5)
 	return m, cmd
 }
 
@@ -283,8 +298,12 @@ func (m *Model) SchedulePage() string {
 			cursor = ">"
 		}
 		// reference time: Jan 2 15:04:05 2006 MST
+		isRecurring := ""
+		if process.IsRecurring {
+			isRecurring = "(recurring)"
+		}
 		processes += cursor + process.Program.Name + ": " + process.StartTime.Format("02/01/2006 15:04") + " - " +
-			process.Duration.Truncate(time.Minute).String() + "\n"
+			process.Duration.Truncate(time.Minute).String() + " " + isRecurring + "\n"
 	}
 	return pageTitle + processes
 }
@@ -364,7 +383,8 @@ func (m *Model) ProcessDetailsPage() string {
 
 	return pageTitle + m.programList[m.cursor].Name +
 		"\n\nStart Time:\n" + m.processDetails.startTime.View() +
-		"\n\nDuration:\n" + m.processDetails.duration.View()
+		"\n\nDuration:\n" + m.processDetails.duration.View() +
+		"\n\nIs Recurring?:\n" + m.processDetails.isRecurring.View()
 }
 
 func (m *Model) initProcessDetailsInput() tea.Cmd {
@@ -385,6 +405,15 @@ func (m *Model) initProcessDetailsInput() tea.Cmd {
 	duration.CharLimit = 10
 	duration.Width = 10
 	m.processDetails.duration = duration
+
+	isRecurring := textinput.New()
+	isRecurring.Placeholder = "N"
+	isRecurring.Cursor.Style = cursorStyle
+	isRecurring.PromptStyle = focusedStyle
+	isRecurring.TextStyle = focusedStyle
+	isRecurring.CharLimit = 1
+	isRecurring.Width = 1
+	m.processDetails.isRecurring = isRecurring
 
 	return m.processDetails.startTime.Focus()
 }

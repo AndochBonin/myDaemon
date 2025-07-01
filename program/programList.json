@@ -22,14 +22,6 @@
         ]
     },
     {
-        "Name": "gaming",
-        "URIWhitelist": [
-            "minecraft",
-            "apex",
-            "csgo"
-        ]
-    },
-    {
         "Name": "movies",
         "URIWhitelist": [
             "vlc",
