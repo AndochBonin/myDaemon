@@ -34,10 +34,10 @@ type Model struct {
 		focused          int
 	}
 	processDetails struct {
-		startTime textinput.Model
-		duration  textinput.Model
+		startTime   textinput.Model
+		duration    textinput.Model
 		isRecurring textinput.Model
-		focused   int
+		focused     int
 	}
 	page        int
 	cursor      int

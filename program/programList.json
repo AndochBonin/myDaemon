@@ -2,8 +2,7 @@
     {
         "Name": "coding",
         "URIWhitelist": [
-            "vscode",
-            "sublime"
+            "code"
         ]
     },
     {

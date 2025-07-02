@@ -10,7 +10,7 @@ replace github.com/AndochBonin/myDaemon/tui => ./tui
 
 require (
 	github.com/AndochBonin/myDaemon/process v0.0.0-00010101000000-000000000000
-	github.com/AndochBonin/myDaemon/program v0.0.0-00010101000000-000000000000
+	github.com/AndochBonin/myDaemon/program v0.0.0-00010101000000-000000000000 // indirect
 	github.com/AndochBonin/myDaemon/tui v0.0.0-00010101000000-000000000000
 )
 
