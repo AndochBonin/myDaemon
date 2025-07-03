@@ -1,10 +1,12 @@
 package tui
 
 import (
+	"slices"
+	"strings"
+
 	"github.com/AndochBonin/myDaemon/program"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"strings"
 )
 
 func (m *Model) ProgramsPage() string {
@@ -131,8 +133,12 @@ func (m *Model) programDetailsPageKeyHandler(key string) tea.Cmd {
 		case 1:
 			name := m.programDetails.programName.Value()
 			whitelist := strings.Split(m.programDetails.programWhitelist.Value(), ",")
-			for i, uri := range whitelist {
-				whitelist[i] = strings.Trim(uri, " ")
+			for i := 0; i < len(whitelist); i++ {
+				whitelist[i] = strings.Trim(whitelist[i], " ")
+				if whitelist[i] == "" {
+					whitelist = slices.Delete(whitelist, i, i+1)
+					i--
+				}
 			}
 			newProgram := program.Program{Name: name, URIWhitelist: whitelist}
 			var err error

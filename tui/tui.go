@@ -64,9 +64,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var keyCmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// new implementation:
-		// switch page:
-		// pass msg.String() to [page]KeyHandler
 		switch m.page {
 		case schedule:
 			keyCmd = m.schedulePageKeyHandler(msg.String())
