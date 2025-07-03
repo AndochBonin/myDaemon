@@ -51,7 +51,7 @@ func RunSchedule(scheduler *process.Scheduler) {
 			for _, name := range append(process.Program.URIWhitelist, exceptions...) {
 				whitelistMap[strings.ToLower(name)] = true
 			}
-			killProcesses(whitelistMap)			
+			killProcesses(whitelistMap)
 		}
 		time.Sleep(5 * time.Second)
 	}

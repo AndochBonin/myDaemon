@@ -2,10 +2,10 @@ package process
 
 import (
 	"errors"
+	"github.com/AndochBonin/myDaemon/program"
 	"slices"
 	"sync"
 	"time"
-	"github.com/AndochBonin/myDaemon/program"
 )
 
 var (
@@ -15,9 +15,9 @@ var (
 )
 
 type Process struct {
-	Program   program.Program
-	StartTime time.Time
-	Duration time.Duration
+	Program     program.Program
+	StartTime   time.Time
+	Duration    time.Duration
 	IsRecurring bool
 }
 
@@ -57,8 +57,8 @@ func (scheduler *Scheduler) AddProcess(process Process) error {
 	}
 	if insertIdx < len(scheduler.Schedule) {
 		nextProcessStartTime := scheduler.Schedule[insertIdx].StartTime
-		if process.StartTime.Add(process.Duration).Equal(nextProcessStartTime) || 
-		   process.StartTime.Add(process.Duration).After(nextProcessStartTime) {
+		if process.StartTime.Add(process.Duration).Equal(nextProcessStartTime) ||
+			process.StartTime.Add(process.Duration).After(nextProcessStartTime) {
 			return ErrSchedule
 		}
 	}

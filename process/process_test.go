@@ -43,7 +43,7 @@ func newMockProcess(t *testing.T, name string, startOffset time.Duration, durati
 	return Process{
 		Program:     program.Program{Name: name},
 		StartTime:   start,
-		Duration: duration,
+		Duration:    duration,
 		IsRecurring: isRecurring,
 	}
 }
@@ -211,7 +211,7 @@ func TestUpdateSchedule(t *testing.T) {
 		scheduler.AddProcess(ongoingProcess)
 		err := scheduler.UpdateSchedule()
 		if err != nil {
-		t.Errorf("Unexpected error. Expected %v got %v", nil, err)
+			t.Errorf("Unexpected error. Expected %v got %v", nil, err)
 		}
 		expected := []Process{ongoingProcess}
 		if !reflect.DeepEqual(scheduler.Schedule, expected) {
@@ -225,7 +225,7 @@ func TestUpdateSchedule(t *testing.T) {
 		scheduler.AddProcess(completedProcess)
 		err := scheduler.UpdateSchedule()
 		if err != nil {
-		t.Errorf("Unexpected error. Expected %v got %v", nil, err)
+			t.Errorf("Unexpected error. Expected %v got %v", nil, err)
 		}
 		expected := []Process{}
 		if !reflect.DeepEqual(scheduler.Schedule, expected) {
@@ -239,7 +239,7 @@ func TestUpdateSchedule(t *testing.T) {
 		scheduler.AddProcess(pendingProcess)
 		err := scheduler.UpdateSchedule()
 		if err != nil {
-		t.Errorf("Unexpected error. Expected %v got %v", nil, err)
+			t.Errorf("Unexpected error. Expected %v got %v", nil, err)
 		}
 		expected := []Process{pendingProcess}
 		if !reflect.DeepEqual(scheduler.Schedule, expected) {
@@ -274,7 +274,7 @@ func TestGetCurrentProcess(t *testing.T) {
 		ongoingProcess := newMockProcess(t, "ongoing process", -time.Minute, time.Hour, false)
 		scheduler.AddProcess(ongoingProcess)
 		process := scheduler.GetCurrentProcess()
-		if process == nil ||!reflect.DeepEqual(*process, ongoingProcess) {
+		if process == nil || !reflect.DeepEqual(*process, ongoingProcess) {
 			t.Errorf("Expected %v got %v", ongoingProcess, process)
 		}
 	})

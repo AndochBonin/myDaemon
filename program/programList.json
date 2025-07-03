@@ -16,15 +16,13 @@
         "Name": "note taking",
         "URIWhitelist": [
             "obsidian",
-            "notion",
-            "vim"
+            "notion"
         ]
     },
     {
-        "Name": "movies",
+        "Name": "making music",
         "URIWhitelist": [
-            "vlc",
-            "brave"
+            "fl64"
         ]
     }
 ]
