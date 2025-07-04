@@ -7,17 +7,20 @@ import (
 	"github.com/AndochBonin/myDaemon/program"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 func (m *Model) ProgramsPage() string {
-	pageTitle := "Programs\n"
-	pageDescription := "schedule process [enter] / new program [n] / edit program [e] / delete program [d]\n\n"
-
+	pageTitle := "Programs"
+	pageKeys := "schedule [enter]   new [n]   edit [e]   delete [d]"
 	programs := ""
+
 	for i, program := range m.programList {
+		var style lipgloss.Style = textContentStyle
 		cursor := " "
 		if i == m.cursor {
-			cursor = ">"
+			cursor = "> "
+			style = focusedStyle.Bold(true)
 		}
 		var whitelist string
 		for j, uri := range program.URIWhitelist {
@@ -26,24 +29,25 @@ func (m *Model) ProgramsPage() string {
 				whitelist += ", "
 			}
 		}
-		programs += cursor + program.Name + ": " + whitelist + "\n"
+		programs += style.Render(cursor + program.Name + ": " + whitelist) + "\n"
 	}
-	return pageTitle + pageDescription + programs
+	return pageTitleStyle.Render(pageTitle)  + "\n\n" + navStyle.Render(pageKeys) + "\n\n" + programs
 }
 
 func (m *Model) ProgramDetailsPage() string {
-	pageTitle := "Program Details\n\n"
+	pageTitle := "Program Details"
 
-	return pageTitle + "\nProgram Name:\n" + m.programDetails.programName.View() +
-		"\n\nProgram Whitelist:\n" + m.programDetails.programWhitelist.View()
+	return pageTitleStyle.Render(pageTitle) + "\n\n" + 
+		   focusedStyle.Render("Program Name: ") + "\n" + m.programDetails.programName.View() + "\n\n" + 
+		   focusedStyle.Render("Program Whitelist: ") + "\n" + m.programDetails.programWhitelist.View()
 }
 
 func (m *Model) initProgramDetailsInput(program program.Program) tea.Cmd {
 	programName := textinput.New()
 	programName.Placeholder = program.Name
-	programName.Cursor.Style = cursorStyle
-	programName.PromptStyle = focusedStyle
-	programName.TextStyle = focusedStyle
+	programName.Cursor.Style = textContentStyle
+	programName.PromptStyle = textContentStyle
+	programName.TextStyle = textContentStyle
 	programName.CharLimit = 156
 	programName.Width = 20
 	m.programDetails.programName = programName
@@ -56,7 +60,9 @@ func (m *Model) initProgramDetailsInput(program program.Program) tea.Cmd {
 			programWhitelist.Placeholder += ", "
 		}
 	}
-	programWhitelist.Cursor.Style = cursorStyle
+	programWhitelist.Cursor.Style = textContentStyle
+	programWhitelist.PromptStyle = textContentStyle
+	programWhitelist.TextStyle = textContentStyle
 	programWhitelist.CharLimit = 156
 	programWhitelist.Width = 20
 	m.programDetails.programWhitelist = programWhitelist
@@ -127,8 +133,6 @@ func (m *Model) programDetailsPageKeyHandler(key string) tea.Cmd {
 			m.programDetails.programWhitelist.TextStyle = focusedStyle
 
 			m.programDetails.programName.Blur()
-			m.programDetails.programName.PromptStyle = noStyle
-			m.programDetails.programName.TextStyle = noStyle
 			return cmd
 		case 1:
 			name := m.programDetails.programName.Value()

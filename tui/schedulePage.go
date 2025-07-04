@@ -4,28 +4,35 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 func (m *Model) SchedulePage() string {
-	pageTitle := "Schedule\n\n"
+	pageTitle := "Schedule"
+	pageKeys := "delete [d]"
 	processes := ""
 	if m.scheduler == nil {
-		return pageTitle
+		return pageTitleStyle.Render(pageTitle) + "\n\n" + navStyle.Render(pageKeys) + "\n\n" + navStyle.Render("nothing here yet.")
 	}
 	for i, process := range m.scheduler.Schedule {
+		var style lipgloss.Style = textContentStyle
 		cursor := " "
 		if m.cursor == i {
-			cursor = ">"
+			style = focusedStyle.Bold(true)
+			cursor = "> "
 		}
 		// reference time: Jan 2 15:04:05 2006 MST
 		isRecurring := ""
 		if process.IsRecurring {
-			isRecurring = "(recurring)"
+			isRecurring = "(R)"
 		}
-		processes += cursor + process.Program.Name + ": " + process.StartTime.Format("02/01/2006 15:04") + " - " +
-			process.Duration.Truncate(time.Minute).String() + " " + isRecurring + "\n"
+		processes += style.Render(cursor + process.Program.Name + ": " + process.StartTime.Format("02/01/2006 15:04") + " - " +
+			process.Duration.Truncate(time.Minute).String() + " " + isRecurring) + "\n"
 	}
-	return pageTitle + processes
+	if processes == "" {
+		processes = navStyle.Render("nothing yet.")
+	}
+	return pageTitleStyle.Render(pageTitle) + "\n\n" + navStyle.Render(pageKeys) + "\n\n" + processes
 }
 
 func (m *Model) schedulePageKeyHandler(key string) tea.Cmd {

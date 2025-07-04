@@ -10,38 +10,38 @@ import (
 )
 
 func (m *Model) ProcessDetailsPage() string {
-	pageTitle := "Process Details\n\n"
+	pageTitle := "Process Details"
 
-	return pageTitle + m.programList[m.cursor].Name +
-		"\n\nStart Time:\n" + m.processDetails.startTime.View() +
-		"\n\nDuration:\n" + m.processDetails.duration.View() +
-		"\n\nIs Recurring?:\n" + m.processDetails.isRecurring.View()
+	return pageTitleStyle.Render(pageTitle + ": " + m.programList[m.cursor].Name) + "\n\n" + 
+		   focusedStyle.Render("Start Time:") + "\n" + m.processDetails.startTime.View() + "\n\n" +
+		   focusedStyle.Render("Duration:") + "\n" + m.processDetails.duration.View() + "\n\n" +
+		   focusedStyle.Render("Is Recurring?:") + "\n" + m.processDetails.isRecurring.View()
 }
 
 func (m *Model) initProcessDetailsInput() tea.Cmd {
 	startTime := textinput.New()
 	startTime.Placeholder = "00:00"
-	startTime.Cursor.Style = cursorStyle
-	startTime.PromptStyle = focusedStyle
-	startTime.TextStyle = focusedStyle
+	startTime.Cursor.Style = textContentStyle
+	startTime.PromptStyle = textContentStyle
+	startTime.TextStyle = textContentStyle
 	startTime.CharLimit = 10
 	startTime.Width = 10
 	m.processDetails.startTime = startTime
 
 	duration := textinput.New()
 	duration.Placeholder = "0h0m"
-	duration.Cursor.Style = cursorStyle
-	duration.PromptStyle = focusedStyle
-	duration.TextStyle = focusedStyle
+	duration.Cursor.Style = textContentStyle
+	duration.PromptStyle = textContentStyle
+	duration.TextStyle = textContentStyle
 	duration.CharLimit = 10
 	duration.Width = 10
 	m.processDetails.duration = duration
 
 	isRecurring := textinput.New()
 	isRecurring.Placeholder = "N"
-	isRecurring.Cursor.Style = cursorStyle
-	isRecurring.PromptStyle = focusedStyle
-	isRecurring.TextStyle = focusedStyle
+	isRecurring.Cursor.Style = textContentStyle
+	isRecurring.PromptStyle = textContentStyle
+	isRecurring.TextStyle = textContentStyle
 	isRecurring.CharLimit = 1
 	isRecurring.Width = 1
 	m.processDetails.isRecurring = isRecurring
@@ -64,8 +64,6 @@ func (m *Model) processDetailsPageKeyHandler(key string) tea.Cmd {
 			m.processDetails.duration.TextStyle = focusedStyle
 
 			m.processDetails.startTime.Blur()
-			m.processDetails.startTime.PromptStyle = noStyle
-			m.processDetails.startTime.TextStyle = noStyle
 			return cmd
 		case 1:
 			m.processDetails.focused = 2
@@ -74,8 +72,6 @@ func (m *Model) processDetailsPageKeyHandler(key string) tea.Cmd {
 			m.processDetails.isRecurring.TextStyle = focusedStyle
 
 			m.processDetails.duration.Blur()
-			m.processDetails.duration.PromptStyle = noStyle
-			m.processDetails.duration.TextStyle = noStyle
 			return cmd
 		case 2:
 			startTime, startErr := time.Parse("15:04", m.processDetails.startTime.Value())

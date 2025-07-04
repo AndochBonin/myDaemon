@@ -18,9 +18,12 @@ const (
 )
 
 var (
-	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	noStyle      = lipgloss.NewStyle()
-	cursorStyle  = focusedStyle
+	myDaemonStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("34")).Bold(true)
+	navStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("7")).Faint(true)
+	pageTitleStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("22")).Bold(true)
+	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("34"))
+	textContentStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("22"))
+	errStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("124"))
 )
 
 type Model struct {
@@ -102,7 +105,7 @@ func (m Model) View() string {
 	case addProcess:
 		view = m.ProcessDetailsPage()
 	}
-	return Header() + view + Footer(m.err)
+	return Title() + NavHeader(m.page) + view + ErrMessage(m.err)
 }
 
 func Run() error {
@@ -115,16 +118,23 @@ func Run() error {
 	return runErr
 }
 
-func Header() string {
-	s := "myDaemon\n\n" + "Schedule [s] / Programs [p] / Help [h]\n\n"
-	return s
+func Title() string {
+	return myDaemonStyle.Render("myDaemon") + "\n\n"
 }
 
-func Footer(err error) string {
+func NavHeader(page int) string {
+	mainNav := navStyle.Render("schedule [s]   programs [p]   help [h]   quit [q / ctrl+c]")
+	backNav := navStyle.Render("back [esc]   quit [ctrl+c]")
+	if page == schedule || page == programs || page == help {
+		return mainNav + "\n\n"
+	}
+	return backNav + "\n\n"
+}
+
+func ErrMessage(err error) string {
 	errMessage := ""
 	if err != nil {
 		errMessage = err.Error()
 	}
-	s := "\n\npress q or ctrl+c to exit"
-	return "\n" + errMessage + s
+	return "\n" + errStyle.Render(errMessage)
 }

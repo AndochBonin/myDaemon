@@ -18,11 +18,5 @@
             "obsidian",
             "notion"
         ]
-    },
-    {
-        "Name": "making music",
-        "URIWhitelist": [
-            "fl64"
-        ]
     }
 ]

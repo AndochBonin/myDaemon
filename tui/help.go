@@ -3,18 +3,18 @@ package tui
 import tea "github.com/charmbracelet/bubbletea"
 
 func (m *Model) HelpPage() string {
-	title := "Help\n\n"
+	title := "Help"
 
-	description := "myDaemon: A process manager. Not a todo app.\n\n"
+	description := textContentStyle.Render("myDaemon: A process manager. Not a todo app.")
 
-	programs := "Program: A set of whitelisted applications\n\n"
+	programs := textContentStyle.Render("Program: A set of whitelisted applications")
 
-	processes := "Process: The execution of a Program for a specified duration.\n" +
-		"         During this period myDaemon kills all applications not listed in the Program whitelist.\n\n"
+	processes := textContentStyle.Render("Process: The execution of a Program for a specified duration.\n" +
+		"         During this period myDaemon kills all applications not listed in the Program whitelist.")
 
-	schedule := "Schedule: A time sorted sequence of non-overlapping Processes\n"
+	schedule := textContentStyle.Render("Schedule: A time sorted sequence of non-overlapping Processes")
 
-	return title + description + programs + processes + schedule
+	return pageTitleStyle.Render(title) + "\n\n" + description + "\n\n" + programs + "\n\n" + processes + "\n\n" + schedule
 }
 
 func (m *Model) helpPageKeyHandler(key string) tea.Cmd {
