@@ -1,6 +1,9 @@
 package tui
 
 import (
+	"os"
+	"path/filepath"
+
 	"github.com/AndochBonin/myDaemon/process"
 	"github.com/AndochBonin/myDaemon/program"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -45,7 +48,9 @@ type Model struct {
 	programList program.ProgramList
 }
 
-var programListFile string = "./program/programList.json"
+//var programListFile string = "./program/programList.json"
+var exePath, _ = os.Executable()
+var programListFile string = filepath.Join(filepath.Dir(exePath), "program", "programList.json")
 
 func initialModel() (Model, error) {
 	var m Model

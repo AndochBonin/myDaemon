@@ -3,6 +3,7 @@ package program
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"slices"
 )
 
@@ -34,6 +35,19 @@ func ReadPrograms(fileName string, programList *ProgramList) error {
 
 	if readErr != nil {
 		if os.IsNotExist(readErr) {
+			dirErr := os.MkdirAll(filepath.Dir(fileName), 0755)
+			if dirErr != nil {
+				return dirErr
+			}
+			f, createErr := os.Create(fileName)
+			if createErr != nil {
+				return createErr
+			}
+			defer f.Close()
+			_, writeErr := f.Write([]byte("[]"))
+			if writeErr != nil {
+				return writeErr
+			}
 			*programList = ProgramList{}
 			return nil
 		}
