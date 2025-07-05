@@ -21,18 +21,19 @@ const (
 )
 
 var (
-	myDaemonStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("34")).Bold(true)
-	navStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("7")).Faint(true)
-	pageTitleStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("34")).Bold(true)
-	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("34"))
+	myDaemonStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("34")).Bold(true)
+	navStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("7")).Faint(true)
+	pageTitleStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("34")).Bold(true)
+	focusedStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("34"))
 	textContentStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("22"))
-	errStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("124"))
+	errStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("124"))
 )
 
 type Model struct {
 	programDetails struct {
 		programName      textinput.Model
 		programWhitelist textinput.Model
+		URLWhitelist     textinput.Model
 		focused          int
 	}
 	processDetails struct {
@@ -48,7 +49,7 @@ type Model struct {
 	programList program.ProgramList
 }
 
-//var programListFile string = "./program/programList.json"
+// var programListFile string = "./program/programList.json"
 var exePath, _ = os.Executable()
 var programListFile string = filepath.Join(filepath.Dir(exePath), "program", "programList.json")
 
@@ -85,14 +86,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			keyCmd = m.processDetailsPageKeyHandler(msg.String())
 		}
 	}
-	var cmd1, cmd2, cmd3, cmd4, cmd5 tea.Cmd
-	m.programDetails.programName, cmd1 = m.programDetails.programName.Update(msg)
-	m.programDetails.programWhitelist, cmd2 = m.programDetails.programWhitelist.Update(msg)
+	var nameUpdate, appWhitelistUpdate, urlWhitelistUpdate, startTimeUpdate, durationUpdate, isRecurringUpdate tea.Cmd
+	m.programDetails.programName, nameUpdate = m.programDetails.programName.Update(msg)
+	m.programDetails.programWhitelist, appWhitelistUpdate = m.programDetails.programWhitelist.Update(msg)
+	m.programDetails.URLWhitelist, urlWhitelistUpdate = m.programDetails.URLWhitelist.Update(msg)
 
-	m.processDetails.startTime, cmd3 = m.processDetails.startTime.Update(msg)
-	m.processDetails.duration, cmd4 = m.processDetails.duration.Update(msg)
-	m.processDetails.isRecurring, cmd5 = m.processDetails.isRecurring.Update(msg)
-	cmd := tea.Batch(cmd1, cmd2, cmd3, cmd4, cmd5, keyCmd)
+	m.processDetails.startTime, startTimeUpdate = m.processDetails.startTime.Update(msg)
+	m.processDetails.duration, durationUpdate = m.processDetails.duration.Update(msg)
+	m.processDetails.isRecurring, isRecurringUpdate = m.processDetails.isRecurring.Update(msg)
+	cmd := tea.Batch(nameUpdate, appWhitelistUpdate, urlWhitelistUpdate, startTimeUpdate, durationUpdate, isRecurringUpdate, keyCmd)
 	return m, cmd
 }
 

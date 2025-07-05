@@ -48,7 +48,7 @@ func RunSchedule(scheduler *process.Scheduler) {
 		process = scheduler.GetCurrentProcess()
 		if process != nil {
 			whitelistMap := make(map[string]bool)
-			for _, name := range append(process.Program.URIWhitelist, exceptions...) {
+			for _, name := range append(process.Program.AppWhitelist, exceptions...) {
 				whitelistMap[strings.ToLower(name)] = true
 			}
 			killProcesses(whitelistMap)

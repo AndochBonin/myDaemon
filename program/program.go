@@ -9,7 +9,8 @@ import (
 
 type Program struct {
 	Name         string
-	URIWhitelist []string
+	AppWhitelist []string
+	URLWhitelist []string
 }
 
 type ProgramList []Program

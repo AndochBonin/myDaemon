@@ -54,6 +54,7 @@ func (m *Model) processDetailsPageKeyHandler(key string) tea.Cmd {
 	case "ctrl+c":
 		return tea.Quit
 	case "esc":
+		m.processDetails.focused = 0
 		m.page = programs
 	case "enter":
 		switch m.processDetails.focused {

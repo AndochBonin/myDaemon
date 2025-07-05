@@ -23,23 +23,24 @@ func (m *Model) ProgramsPage() string {
 			style = focusedStyle.Bold(true)
 		}
 		var whitelist string
-		for j, uri := range program.URIWhitelist {
+		for j, uri := range program.AppWhitelist {
 			whitelist += uri
-			if j < len(program.URIWhitelist)-1 {
+			if j < len(program.AppWhitelist)-1 {
 				whitelist += ", "
 			}
 		}
-		programs += style.Render(cursor + program.Name + ": " + whitelist) + "\n"
+		programs += style.Render(cursor+program.Name+": "+whitelist) + "\n"
 	}
-	return pageTitleStyle.Render(pageTitle)  + "\n\n" + navStyle.Render(pageKeys) + "\n\n" + programs
+	return pageTitleStyle.Render(pageTitle) + "\n\n" + navStyle.Render(pageKeys) + "\n\n" + programs
 }
 
 func (m *Model) ProgramDetailsPage() string {
 	pageTitle := "Program Details"
 
-	return pageTitleStyle.Render(pageTitle) + "\n\n" + 
-		   focusedStyle.Render("Program Name: ") + "\n" + m.programDetails.programName.View() + "\n\n" + 
-		   focusedStyle.Render("Program Whitelist: ") + "\n" + m.programDetails.programWhitelist.View()
+	return pageTitleStyle.Render(pageTitle) + "\n\n" +
+		focusedStyle.Render("Program Name: ") + "\n" + m.programDetails.programName.View() + "\n\n" +
+		focusedStyle.Render("App Whitelist: ") + "\n" + m.programDetails.programWhitelist.View() + "\n\n" +
+		focusedStyle.Render("URL Whitelist: ") + "\n" + m.programDetails.URLWhitelist.View()
 }
 
 func (m *Model) initProgramDetailsInput(program program.Program) tea.Cmd {
@@ -54,9 +55,9 @@ func (m *Model) initProgramDetailsInput(program program.Program) tea.Cmd {
 
 	programWhitelist := textinput.New()
 	programWhitelist.Placeholder = ""
-	for i, uri := range program.URIWhitelist {
-		programWhitelist.Placeholder += uri
-		if i < len(program.URIWhitelist)-1 {
+	for i, app := range program.AppWhitelist {
+		programWhitelist.Placeholder += app
+		if i < len(program.AppWhitelist)-1 {
 			programWhitelist.Placeholder += ", "
 		}
 	}
@@ -66,6 +67,21 @@ func (m *Model) initProgramDetailsInput(program program.Program) tea.Cmd {
 	programWhitelist.CharLimit = 156
 	programWhitelist.Width = 20
 	m.programDetails.programWhitelist = programWhitelist
+
+	URLWhitelist := textinput.New()
+	URLWhitelist.Placeholder = ""
+	for i, url := range program.URLWhitelist {
+		URLWhitelist.Placeholder += url
+		if i < len(program.URLWhitelist)-1 {
+			URLWhitelist.Placeholder += ", "
+		}
+	}
+	URLWhitelist.Cursor.Style = textContentStyle
+	URLWhitelist.PromptStyle = textContentStyle
+	URLWhitelist.TextStyle = textContentStyle
+	URLWhitelist.CharLimit = 156
+	URLWhitelist.Width = 20
+	m.programDetails.URLWhitelist = URLWhitelist
 
 	return m.programDetails.programName.Focus()
 }
@@ -123,6 +139,7 @@ func (m *Model) programDetailsPageKeyHandler(key string) tea.Cmd {
 	case "ctrl+c":
 		return tea.Quit
 	case "esc":
+		m.programDetails.focused = 0
 		m.page = programs
 	case "enter":
 		switch m.programDetails.focused {
@@ -135,16 +152,32 @@ func (m *Model) programDetailsPageKeyHandler(key string) tea.Cmd {
 			m.programDetails.programName.Blur()
 			return cmd
 		case 1:
+			m.programDetails.focused = 2
+			cmd := m.programDetails.URLWhitelist.Focus()
+			m.programDetails.URLWhitelist.PromptStyle = focusedStyle
+			m.programDetails.URLWhitelist.TextStyle = focusedStyle
+
+			m.programDetails.programWhitelist.Blur()
+			return cmd
+		case 2:
 			name := m.programDetails.programName.Value()
-			whitelist := strings.Split(m.programDetails.programWhitelist.Value(), ",")
-			for i := 0; i < len(whitelist); i++ {
-				whitelist[i] = strings.Trim(whitelist[i], " ")
-				if whitelist[i] == "" {
-					whitelist = slices.Delete(whitelist, i, i+1)
+			appWhitelist := strings.Split(m.programDetails.programWhitelist.Value(), ",")
+			for i := 0; i < len(appWhitelist); i++ {
+				appWhitelist[i] = strings.Trim(appWhitelist[i], " ")
+				if appWhitelist[i] == "" {
+					appWhitelist = slices.Delete(appWhitelist, i, i+1)
 					i--
 				}
 			}
-			newProgram := program.Program{Name: name, URIWhitelist: whitelist}
+			urlWhitelist := strings.Split(m.programDetails.URLWhitelist.Value(), ",")
+			for i := 0; i < len(urlWhitelist); i++ {
+				urlWhitelist[i] = strings.Trim(urlWhitelist[i], " ")
+				if urlWhitelist[i] == "" {
+					urlWhitelist = slices.Delete(urlWhitelist, i, i+1)
+					i--
+				}
+			}
+			newProgram := program.Program{Name: name, AppWhitelist: appWhitelist, URLWhitelist: urlWhitelist}
 			var err error
 			switch m.page {
 			case editProgram:
