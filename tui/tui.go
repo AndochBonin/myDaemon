@@ -23,7 +23,7 @@ const (
 var (
 	myDaemonStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("34")).Bold(true)
 	navStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("7")).Faint(true)
-	pageTitleStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("22")).Bold(true)
+	pageTitleStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("34")).Bold(true)
 	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("34"))
 	textContentStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("22"))
 	errStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("124"))
