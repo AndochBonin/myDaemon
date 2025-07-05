@@ -154,17 +154,11 @@ func (m *Model) programDetailsPageKeyHandler(key string) tea.Cmd {
 		case 0:
 			m.programDetails.focused = 1
 			cmd := m.programDetails.programWhitelist.Focus()
-			m.programDetails.programWhitelist.PromptStyle = focusedStyle
-			m.programDetails.programWhitelist.TextStyle = focusedStyle
-
 			m.programDetails.programName.Blur()
 			return cmd
 		case 1:
 			m.programDetails.focused = 2
 			cmd := m.programDetails.URLWhitelist.Focus()
-			m.programDetails.URLWhitelist.PromptStyle = focusedStyle
-			m.programDetails.URLWhitelist.TextStyle = focusedStyle
-
 			m.programDetails.programWhitelist.Blur()
 			return cmd
 		case 2:

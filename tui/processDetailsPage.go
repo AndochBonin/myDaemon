@@ -61,17 +61,11 @@ func (m *Model) processDetailsPageKeyHandler(key string) tea.Cmd {
 		case 0:
 			m.processDetails.focused = 1
 			cmd := m.processDetails.duration.Focus()
-			m.processDetails.duration.PromptStyle = focusedStyle
-			m.processDetails.duration.TextStyle = focusedStyle
-
 			m.processDetails.startTime.Blur()
 			return cmd
 		case 1:
 			m.processDetails.focused = 2
 			cmd := m.processDetails.isRecurring.Focus()
-			m.processDetails.isRecurring.PromptStyle = focusedStyle
-			m.processDetails.isRecurring.TextStyle = focusedStyle
-
 			m.processDetails.duration.Blur()
 			return cmd
 		case 2:
