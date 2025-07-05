@@ -78,6 +78,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			keyCmd = m.schedulePageKeyHandler(msg.String())
 		case programs:
 			keyCmd = m.programsPageKeyHandler(msg.String())
+			if keyCmd != nil { // doing this to consume "n" / "e" presses to avoid them showing up in the text input
+				return m, keyCmd
+			}
 		case help:
 			keyCmd = m.helpPageKeyHandler(msg.String())
 		case addProgram, editProgram:
