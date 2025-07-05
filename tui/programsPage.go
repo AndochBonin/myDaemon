@@ -45,13 +45,12 @@ func (m *Model) ProgramDetailsPage() string {
 
 func (m *Model) initProgramDetailsInput(program program.Program) tea.Cmd {
 	programName := textinput.New()
-	programName.Placeholder = program.Name
 	programName.Cursor.Style = textContentStyle
 	programName.PromptStyle = textContentStyle
 	programName.TextStyle = textContentStyle
-	programName.CharLimit = 156
-	programName.Width = 20
-	m.programDetails.programName = programName
+	programName.CharLimit = 32
+	programName.Width = 32
+	programName.Placeholder = program.Name
 
 	programWhitelist := textinput.New()
 	programWhitelist.Placeholder = ""
@@ -64,9 +63,8 @@ func (m *Model) initProgramDetailsInput(program program.Program) tea.Cmd {
 	programWhitelist.Cursor.Style = textContentStyle
 	programWhitelist.PromptStyle = textContentStyle
 	programWhitelist.TextStyle = textContentStyle
-	programWhitelist.CharLimit = 156
-	programWhitelist.Width = 20
-	m.programDetails.programWhitelist = programWhitelist
+	programWhitelist.CharLimit = 256
+	programWhitelist.Width = 256
 
 	URLWhitelist := textinput.New()
 	URLWhitelist.Placeholder = ""
@@ -76,11 +74,21 @@ func (m *Model) initProgramDetailsInput(program program.Program) tea.Cmd {
 			URLWhitelist.Placeholder += ", "
 		}
 	}
+
 	URLWhitelist.Cursor.Style = textContentStyle
 	URLWhitelist.PromptStyle = textContentStyle
 	URLWhitelist.TextStyle = textContentStyle
-	URLWhitelist.CharLimit = 156
-	URLWhitelist.Width = 20
+	URLWhitelist.CharLimit = 256
+	URLWhitelist.Width = 256
+
+	if m.page == editProgram {
+		programName.SetValue(programName.Placeholder)
+		URLWhitelist.SetValue(URLWhitelist.Placeholder)
+		programWhitelist.SetValue(programWhitelist.Placeholder)
+	}
+
+	m.programDetails.programName = programName
+	m.programDetails.programWhitelist = programWhitelist
 	m.programDetails.URLWhitelist = URLWhitelist
 
 	return m.programDetails.programName.Focus()
