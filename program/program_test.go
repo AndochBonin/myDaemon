@@ -24,7 +24,7 @@ func TestReadPrograms(t *testing.T) {
 		{
 			Name:         "ReadTestApp",
 			AppWhitelist: []string{"spotify", "code"},
-			URLWhitelist: []string{"https://read.example.com/*", "*"},
+			WebHostBlocklist: []string{"https://read.example.com/*", "*"},
 		},
 	}
 
@@ -52,7 +52,7 @@ func TestCreateProgram(t *testing.T) {
 	prog := Program{
 		Name:         "CreateTestApp",
 		AppWhitelist: []string{"spotify", "code"},
-		URLWhitelist: []string{"https://read.example.com/*", "*"},
+		WebHostBlocklist: []string{"https://read.example.com/*", "*"},
 	}
 
 	err := CreateProgram(testFileName, prog)
@@ -75,10 +75,10 @@ func TestUpdateProgram(t *testing.T) {
 	cleanupTestFile(t)
 	defer cleanupTestFile(t)
 
-	original := Program{Name: "OriginalApp", URLWhitelist: []string{"https://orig.com"}}
+	original := Program{Name: "OriginalApp", WebHostBlocklist: []string{"https://orig.com"}}
 	_ = CreateProgram(testFileName, original)
 
-	updated := Program{Name: "UpdatedApp", URLWhitelist: []string{"https://updated.com"}}
+	updated := Program{Name: "UpdatedApp", WebHostBlocklist: []string{"https://updated.com"}}
 	err := UpdateProgram(testFileName, 0, updated)
 	if err != nil {
 		t.Fatalf("UpdateProgram failed: %v", err)
@@ -99,8 +99,8 @@ func TestDeleteProgram(t *testing.T) {
 	cleanupTestFile(t)
 	defer cleanupTestFile(t)
 
-	toDelete := Program{Name: "ToDelete", AppWhitelist: []string{}, URLWhitelist: []string{}}
-	toKeep := Program{Name: "ToKeep", AppWhitelist: []string{}, URLWhitelist: []string{}}
+	toDelete := Program{Name: "ToDelete", AppWhitelist: []string{}, WebHostBlocklist: []string{}}
+	toKeep := Program{Name: "ToKeep", AppWhitelist: []string{}, WebHostBlocklist: []string{}}
 
 	_ = CreateProgram(testFileName, toDelete)
 	_ = CreateProgram(testFileName, toKeep)

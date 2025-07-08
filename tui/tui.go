@@ -33,7 +33,7 @@ type Model struct {
 	programDetails struct {
 		programName      textinput.Model
 		programWhitelist textinput.Model
-		URLWhitelist     textinput.Model
+		webHostBlocklist     textinput.Model
 		focused          int
 	}
 	processDetails struct {
@@ -89,15 +89,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			keyCmd = m.processDetailsPageKeyHandler(msg.String())
 		}
 	}
-	var nameUpdate, appWhitelistUpdate, urlWhitelistUpdate, startTimeUpdate, durationUpdate, isRecurringUpdate tea.Cmd
+	var nameUpdate, appWhitelistUpdate, webHostBlocklistUpdate, startTimeUpdate, durationUpdate, isRecurringUpdate tea.Cmd
 	m.programDetails.programName, nameUpdate = m.programDetails.programName.Update(msg)
 	m.programDetails.programWhitelist, appWhitelistUpdate = m.programDetails.programWhitelist.Update(msg)
-	m.programDetails.URLWhitelist, urlWhitelistUpdate = m.programDetails.URLWhitelist.Update(msg)
+	m.programDetails.webHostBlocklist, webHostBlocklistUpdate = m.programDetails.webHostBlocklist.Update(msg)
 
 	m.processDetails.startTime, startTimeUpdate = m.processDetails.startTime.Update(msg)
 	m.processDetails.duration, durationUpdate = m.processDetails.duration.Update(msg)
 	m.processDetails.isRecurring, isRecurringUpdate = m.processDetails.isRecurring.Update(msg)
-	cmd := tea.Batch(nameUpdate, appWhitelistUpdate, urlWhitelistUpdate, startTimeUpdate, durationUpdate, isRecurringUpdate, keyCmd)
+	cmd := tea.Batch(nameUpdate, appWhitelistUpdate, webHostBlocklistUpdate, startTimeUpdate, durationUpdate, isRecurringUpdate, keyCmd)
 	return m, cmd
 }
 

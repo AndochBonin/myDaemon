@@ -10,7 +10,7 @@ import (
 type Program struct {
 	Name         string
 	AppWhitelist []string
-	URLWhitelist []string
+	WebHostBlocklist []string
 }
 
 type ProgramList []Program

@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/csv"
 	"fmt"
+	"log"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -12,6 +14,7 @@ import (
 	"github.com/AndochBonin/myDaemon/tui"
 )
 
+var currentProcess *process.Process
 var exceptions = []string{"explorer", "Taskmgr", "WindowsTerminal", "TextInputHost"}
 
 func killProcesses(whitelistMap map[string]bool) error {
@@ -42,13 +45,12 @@ func killProcesses(whitelistMap map[string]bool) error {
 }
 
 func RunSchedule(scheduler *process.Scheduler) {
-	var process *process.Process
 	for {
 		scheduler.UpdateSchedule()
-		process = scheduler.GetCurrentProcess()
-		if process != nil {
+		currentProcess = scheduler.GetCurrentProcess()
+		if currentProcess != nil {
 			whitelistMap := make(map[string]bool)
-			for _, name := range append(process.Program.AppWhitelist, exceptions...) {
+			for _, name := range append(currentProcess.Program.AppWhitelist, exceptions...) {
 				whitelistMap[strings.ToLower(name)] = true
 			}
 			killProcesses(whitelistMap)
@@ -60,8 +62,24 @@ func RunSchedule(scheduler *process.Scheduler) {
 func main() {
 	scheduler := process.GetScheduler()
 	go RunSchedule(scheduler)
+	certFile := "C:\\Certs\\mydaemon.pem"
+	keyFile := "C:\\Certs\\mydaemon.key"
+	if !isKeyCertPairExist(certFile, keyFile) {
+		log.Fatal("Key Cert pair does not exist")
+	}
+	go RunTLSProxy(certFile, keyFile)
 	err := tui.Run()
 	if err != nil {
 		fmt.Println("welp oops")
 	}
+}
+
+// ensure key and pem exist
+func isKeyCertPairExist(certFile string, keyFile string) bool {
+	_, certErr := os.Stat(certFile)
+	_, keyErr := os.Stat(keyFile)
+	if os.IsNotExist(certErr) || os.IsNotExist(keyErr) {
+		return false
+	}
+	return true
 }

@@ -40,7 +40,7 @@ func (m *Model) ProgramDetailsPage() string {
 	return pageTitleStyle.Render(pageTitle) + "\n\n" +
 		focusedStyle.Render("Program Name: ") + "\n" + m.programDetails.programName.View() + "\n\n" +
 		focusedStyle.Render("App Whitelist: ") + "\n" + m.programDetails.programWhitelist.View() + "\n\n" +
-		focusedStyle.Render("URL Whitelist: ") + "\n" + m.programDetails.URLWhitelist.View()
+		focusedStyle.Render("Web Host Blocklist: ") + "\n" + m.programDetails.webHostBlocklist.View()
 }
 
 func (m *Model) initProgramDetailsInput(program program.Program) tea.Cmd {
@@ -66,30 +66,30 @@ func (m *Model) initProgramDetailsInput(program program.Program) tea.Cmd {
 	programWhitelist.CharLimit = 256
 	programWhitelist.Width = 256
 
-	URLWhitelist := textinput.New()
-	URLWhitelist.Placeholder = ""
-	for i, url := range program.URLWhitelist {
-		URLWhitelist.Placeholder += url
-		if i < len(program.URLWhitelist)-1 {
-			URLWhitelist.Placeholder += ", "
+	Blocklist := textinput.New()
+	Blocklist.Placeholder = ""
+	for i, url := range program.WebHostBlocklist {
+		Blocklist.Placeholder += url
+		if i < len(program.WebHostBlocklist)-1 {
+			Blocklist.Placeholder += ", "
 		}
 	}
 
-	URLWhitelist.Cursor.Style = textContentStyle
-	URLWhitelist.PromptStyle = textContentStyle
-	URLWhitelist.TextStyle = textContentStyle
-	URLWhitelist.CharLimit = 256
-	URLWhitelist.Width = 256
+	Blocklist.Cursor.Style = textContentStyle
+	Blocklist.PromptStyle = textContentStyle
+	Blocklist.TextStyle = textContentStyle
+	Blocklist.CharLimit = 256
+	Blocklist.Width = 256
 
 	if m.page == editProgram {
 		programName.SetValue(programName.Placeholder)
-		URLWhitelist.SetValue(URLWhitelist.Placeholder)
+		Blocklist.SetValue(Blocklist.Placeholder)
 		programWhitelist.SetValue(programWhitelist.Placeholder)
 	}
 
 	m.programDetails.programName = programName
 	m.programDetails.programWhitelist = programWhitelist
-	m.programDetails.URLWhitelist = URLWhitelist
+	m.programDetails.webHostBlocklist = Blocklist
 
 	return m.programDetails.programName.Focus()
 }
@@ -158,7 +158,7 @@ func (m *Model) programDetailsPageKeyHandler(key string) tea.Cmd {
 			return cmd
 		case 1:
 			m.programDetails.focused = 2
-			cmd := m.programDetails.URLWhitelist.Focus()
+			cmd := m.programDetails.webHostBlocklist.Focus()
 			m.programDetails.programWhitelist.Blur()
 			return cmd
 		case 2:
@@ -171,15 +171,15 @@ func (m *Model) programDetailsPageKeyHandler(key string) tea.Cmd {
 					i--
 				}
 			}
-			urlWhitelist := strings.Split(m.programDetails.URLWhitelist.Value(), ",")
-			for i := 0; i < len(urlWhitelist); i++ {
-				urlWhitelist[i] = strings.Trim(urlWhitelist[i], " ")
-				if urlWhitelist[i] == "" {
-					urlWhitelist = slices.Delete(urlWhitelist, i, i+1)
+			webHostBlocklist := strings.Split(m.programDetails.webHostBlocklist.Value(), ",")
+			for i := 0; i < len(webHostBlocklist); i++ {
+				webHostBlocklist[i] = strings.Trim(webHostBlocklist[i], " ")
+				if webHostBlocklist[i] == "" {
+					webHostBlocklist = slices.Delete(webHostBlocklist, i, i+1)
 					i--
 				}
 			}
-			newProgram := program.Program{Name: name, AppWhitelist: appWhitelist, URLWhitelist: urlWhitelist}
+			newProgram := program.Program{Name: name, AppWhitelist: appWhitelist, WebHostBlocklist: webHostBlocklist}
 			var err error
 			switch m.page {
 			case editProgram:
