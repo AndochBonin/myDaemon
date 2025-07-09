@@ -5,7 +5,7 @@ import tea "github.com/charmbracelet/bubbletea"
 func (m *Model) HelpPage() string {
 	title := "Help"
 
-	description := textContentStyle.Render("myDaemon: A process manager. Not a todo app.")
+	description := textContentStyle.Render("myDaemon (v. 1.0): A process manager. Not a todo app.")
 
 	programs := textContentStyle.Render("Program: A set of whitelisted applications")
 

@@ -65,8 +65,6 @@ func RunTLSProxy(certFile, keyFile string) {
 				fmt.Fprintln(w, "<!DOCTYPE html><head><title>myDaemon</title></head><body><h1>hi</h1></body></html>")
 			}
 			if currentProcess != nil && isBlacklisted(r.URL.Hostname(), currentProcess.Program.WebHostBlocklist) {
-				w.Header().Set("Content-Type", "text/html; charset=utf-8")
-				fmt.Fprintf(w, "%s", getBlockedURLPage(r.URL.Hostname()))
 				return
 			} else if r.Method == http.MethodConnect {
 				handleTunneling(w, r)
@@ -75,6 +73,7 @@ func RunTLSProxy(certFile, keyFile string) {
 			}
 		}),
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
+		ErrorLog: log.New(io.Discard, "", 0), 
 	}
 	log.Fatal(server.ListenAndServeTLS(certFile, keyFile))
 }
