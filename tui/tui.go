@@ -66,10 +66,12 @@ func initialModel() (Model, error) {
 }
 
 func (m Model) Init() tea.Cmd {
+	
 	return tea.SetWindowTitle("myDaemon")
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
 	var keyCmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -89,15 +91,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			keyCmd = m.processDetailsPageKeyHandler(msg.String())
 		}
 	}
-	var nameUpdate, appWhitelistUpdate, webHostBlocklistUpdate, startTimeUpdate, durationUpdate, isRecurringUpdate tea.Cmd
-	m.programDetails.programName, nameUpdate = m.programDetails.programName.Update(msg)
-	m.programDetails.programWhitelist, appWhitelistUpdate = m.programDetails.programWhitelist.Update(msg)
-	m.programDetails.webHostBlocklist, webHostBlocklistUpdate = m.programDetails.webHostBlocklist.Update(msg)
-
-	m.processDetails.startTime, startTimeUpdate = m.processDetails.startTime.Update(msg)
-	m.processDetails.duration, durationUpdate = m.processDetails.duration.Update(msg)
-	m.processDetails.isRecurring, isRecurringUpdate = m.processDetails.isRecurring.Update(msg)
-	cmd := tea.Batch(nameUpdate, appWhitelistUpdate, webHostBlocklistUpdate, startTimeUpdate, durationUpdate, isRecurringUpdate, keyCmd)
+	for _, textModel := range [](*textinput.Model){
+		&m.programDetails.programName,
+		&m.programDetails.programWhitelist,
+		&m.programDetails.webHostBlocklist,
+		&m.processDetails.startTime,
+		&m.processDetails.duration,
+		&m.processDetails.isRecurring,
+	} {
+		var cmd tea.Cmd
+		*textModel, cmd = textModel.Update(msg)
+		cmds = append(cmds, cmd)
+	}
+	cmds = append(cmds, keyCmd)
+	cmd := tea.Batch(cmds...)
 	return m, cmd
 }
 
