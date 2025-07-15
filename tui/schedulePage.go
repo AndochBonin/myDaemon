@@ -29,7 +29,7 @@ func (m *Model) SchedulePage() string {
 			isRecurring = "(R)"
 		}
 		processes += style.Render(cursor + process.Program.Name + ": " + process.StartTime.Format("02/01/2006 15:04") + " - " +
-			process.Duration.Truncate(time.Minute).String() + " " + isRecurring) + "\n"
+			process.Duration.Truncate(time.Second).String() + " " + isRecurring) + "\n"
 	}
 	if processes == "" {
 		processes = navStyle.Render("nothing yet.")

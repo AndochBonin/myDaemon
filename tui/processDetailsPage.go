@@ -71,6 +71,7 @@ func (m *Model) processDetailsPageKeyHandler(key string) tea.Cmd {
 		case 2:
 			startTime, startErr := time.Parse("15:04", m.processDetails.startTime.Value())
 			duration, durationErr := time.ParseDuration(m.processDetails.duration.Value())
+			duration = duration - time.Second
 			startTime = startTime.AddDate(time.Now().Year(), int(time.Now().Month())-1, time.Now().Day()-1)
 
 			if startErr != nil || durationErr != nil {
