@@ -1,11 +1,15 @@
 package process
 
 import (
+	"encoding/json"
 	"errors"
-	"github.com/AndochBonin/myDaemon/program"
+	"os"
+	"path/filepath"
 	"slices"
 	"sync"
 	"time"
+
+	"github.com/AndochBonin/myDaemon/program"
 )
 
 var (
@@ -25,6 +29,9 @@ type Scheduler struct {
 	Schedule []Process
 }
 
+var jsonPrefix = ""
+var jsonIndent = "    "
+
 func GetScheduler() *Scheduler {
 	createSchedule := func() {
 		s = &Scheduler{}
@@ -33,7 +40,7 @@ func GetScheduler() *Scheduler {
 	return s
 }
 
-func (scheduler *Scheduler) AddProcess(process Process) error {
+func (scheduler *Scheduler) AddProcess(process Process, scheduleFile string) error {
 	insertIdx, match := slices.BinarySearchFunc(scheduler.Schedule, process, func(E Process, T Process) int {
 		if E.StartTime.Equal(T.StartTime) {
 			return 0
@@ -63,10 +70,10 @@ func (scheduler *Scheduler) AddProcess(process Process) error {
 		}
 	}
 	scheduler.Schedule = slices.Insert(scheduler.Schedule, insertIdx, process)
-	return nil
+	return WriteScheduleToJSONFile(scheduleFile, scheduler.Schedule)
 }
 
-func (scheduler *Scheduler) RemoveProcess(processID int, endRecurrence bool) error {
+func (scheduler *Scheduler) RemoveProcess(processID int, endRecurrence bool, scheduleFile string) error {
 	if processID < 0 || processID >= len(scheduler.Schedule) {
 		return nil
 	}
@@ -76,19 +83,20 @@ func (scheduler *Scheduler) RemoveProcess(processID int, endRecurrence bool) err
 	if process.IsRecurring && !endRecurrence {
 		timeOffset := time.Hour * 24
 		process.StartTime = process.StartTime.Add(timeOffset)
-		err := scheduler.AddProcess(process)
-		if err != nil {
-			return err
-		}
+		err := scheduler.AddProcess(process, scheduleFile)
+		return err
 	}
-	return nil
+	return WriteScheduleToJSONFile(scheduleFile, scheduler.Schedule)
 }
 
-func (scheduler *Scheduler) UpdateSchedule() error {
+func (scheduler *Scheduler) UpdateSchedule(scheduleFile string) error {
 	if len(scheduler.Schedule) == 0 {
 		return nil
 	} else if process := scheduler.Schedule[0]; time.Now().After(process.StartTime.Add(process.Duration)) {
-		return scheduler.RemoveProcess(0, !process.IsRecurring)
+		removeErr := scheduler.RemoveProcess(0, !process.IsRecurring, scheduleFile)
+		if removeErr != nil {
+			return removeErr
+		}
 	}
 	return nil
 }
@@ -100,4 +108,40 @@ func (scheduler *Scheduler) GetCurrentProcess() *Process {
 		return &scheduler.Schedule[0]
 	}
 	return nil
+}
+
+func ReadScheduleFromFile(fileName string, schedule *[]Process) error {
+	fileData, readErr := os.ReadFile(fileName)
+	if readErr != nil {
+		if os.IsNotExist(readErr) {
+			dirErr := os.MkdirAll(filepath.Dir(fileName), 0755)
+			if dirErr != nil {
+				return dirErr
+			}
+			f, createErr := os.Create(fileName)
+			if createErr != nil {
+				return createErr
+			}
+			defer f.Close()
+			_, writeErr := f.Write([]byte("[]"))
+			if writeErr != nil {
+				return writeErr
+			}
+			*schedule = []Process{}
+			return nil
+		}
+		return readErr
+	}
+
+	_ = json.Unmarshal(fileData, schedule)
+
+	return nil
+}
+
+func WriteScheduleToJSONFile(fileName string, schedule []Process) error {
+	scheduleByteData, marshalErr := json.MarshalIndent(schedule, jsonPrefix, jsonIndent)
+	if marshalErr != nil {
+		return marshalErr
+	}
+	return os.WriteFile(fileName, scheduleByteData, 0644)
 }

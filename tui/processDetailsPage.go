@@ -80,7 +80,7 @@ func (m *Model) processDetailsPageKeyHandler(key string) tea.Cmd {
 				if m.processDetails.isRecurring.Value() == "Y" {
 					newProcess.IsRecurring = true
 				}
-				scheduleErr := m.scheduler.AddProcess(newProcess)
+				scheduleErr := m.scheduler.AddProcess(newProcess, scheduleFile)
 				if scheduleErr != nil {
 					m.err = scheduleErr
 				}

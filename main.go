@@ -7,12 +7,15 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
-
 	"github.com/AndochBonin/myDaemon/process"
 	"github.com/AndochBonin/myDaemon/tui"
 )
+
+var exePath, _ = os.Executable()
+var scheduleFile string = filepath.Join(filepath.Dir(exePath), "storage", "schedule.json")
 
 var currentProcess *process.Process
 var exceptions = []string{"explorer", "Taskmgr", "WindowsTerminal", "TextInputHost"}
@@ -40,13 +43,12 @@ func killProcesses(whitelistMap map[string]bool) error {
 			}
 		}
 	}
-
 	return nil
 }
 
 func RunSchedule(scheduler *process.Scheduler) {
 	for {
-		scheduler.UpdateSchedule()
+		scheduler.UpdateSchedule(scheduleFile)
 		currentProcess = scheduler.GetCurrentProcess()
 		if currentProcess != nil {
 			whitelistMap := make(map[string]bool)
@@ -61,6 +63,7 @@ func RunSchedule(scheduler *process.Scheduler) {
 
 func main() {
 	scheduler := process.GetScheduler()
+	process.ReadScheduleFromFile(scheduleFile, &scheduler.Schedule)
 	go RunSchedule(scheduler)
 	certFile := "C:\\Certs\\mydaemon.pem"
 	keyFile := "C:\\Certs\\mydaemon.key"
@@ -74,7 +77,6 @@ func main() {
 	}
 }
 
-// ensure key and pem exist
 func isKeyCertPairExist(certFile string, keyFile string) bool {
 	_, certErr := os.Stat(certFile)
 	_, keyErr := os.Stat(keyFile)

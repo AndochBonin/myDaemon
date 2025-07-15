@@ -9,6 +9,8 @@ import (
 	"github.com/AndochBonin/myDaemon/program"
 )
 
+var scheduleFile string = "./schedule/schedule.json"
+
 func TestGetScheduler(t *testing.T) {
 	// test that GetScheduler always returns the same instance (singleton)
 	scheduler := GetScheduler()
@@ -63,7 +65,7 @@ func TestAddProcess(t *testing.T) {
 	}
 
 	t.Run("adds initial process", func(t *testing.T) {
-		err := scheduler.AddProcess(processStartNow)
+		err := scheduler.AddProcess(processStartNow, scheduleFile)
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
@@ -71,7 +73,7 @@ func TestAddProcess(t *testing.T) {
 	})
 
 	t.Run("adds later process in order", func(t *testing.T) {
-		err := scheduler.AddProcess(processStartLater)
+		err := scheduler.AddProcess(processStartLater, scheduleFile)
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
@@ -79,7 +81,7 @@ func TestAddProcess(t *testing.T) {
 	})
 
 	t.Run("adds earlier process in order", func(t *testing.T) {
-		err := scheduler.AddProcess(processStartEarlier)
+		err := scheduler.AddProcess(processStartEarlier, scheduleFile)
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
@@ -87,7 +89,7 @@ func TestAddProcess(t *testing.T) {
 	})
 
 	t.Run("rejects overlapping process", func(t *testing.T) {
-		err := scheduler.AddProcess(processOverlapLater)
+		err := scheduler.AddProcess(processOverlapLater, scheduleFile)
 		if err != ErrSchedule {
 			t.Errorf("Expected ErrSchedule, got: %v", err)
 		}
@@ -95,7 +97,7 @@ func TestAddProcess(t *testing.T) {
 	})
 
 	t.Run("rejects process with duplicate start time", func(t *testing.T) {
-		err := scheduler.AddProcess(processSameTimeLater)
+		err := scheduler.AddProcess(processSameTimeLater, scheduleFile)
 		if err != ErrSchedule {
 			t.Errorf("Expected ErrSchedule, got: %v", err)
 		}
@@ -110,15 +112,15 @@ func TestRemoveProcess(t *testing.T) {
 	t.Run("remove invalid index", func(t *testing.T) {
 		scheduler.Schedule = nil
 		process := Process{}
-		err := scheduler.AddProcess(process)
+		err := scheduler.AddProcess(process, scheduleFile)
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
-		err = scheduler.RemoveProcess(-1, true)
+		err = scheduler.RemoveProcess(-1, true, scheduleFile)
 		if err != nil {
 			t.Errorf("Expected %v got %v instead", ErrSchedule, err)
 		}
-		err = scheduler.RemoveProcess(1, true)
+		err = scheduler.RemoveProcess(1, true, scheduleFile)
 		if err != nil {
 			t.Errorf("Expected %v got %v instead", ErrSchedule, err)
 		}
@@ -127,8 +129,8 @@ func TestRemoveProcess(t *testing.T) {
 
 	t.Run("remove valid index, end recurrence", func(t *testing.T) {
 		scheduler.Schedule = nil
-		addErr := scheduler.AddProcess(Process{})
-		removeErr := scheduler.RemoveProcess(0, true)
+		addErr := scheduler.AddProcess(Process{}, scheduleFile)
+		removeErr := scheduler.RemoveProcess(0, true, scheduleFile)
 		if addErr != nil || removeErr != nil {
 			t.Errorf("Unexpected errors: %v, %v", addErr, removeErr)
 		}
@@ -138,8 +140,8 @@ func TestRemoveProcess(t *testing.T) {
 	t.Run("remove valid index, keep recurrence", func(t *testing.T) {
 		scheduler.Schedule = nil
 		process := newMockProcess(t, "recurring", time.Second, time.Hour, true)
-		addErr := scheduler.AddProcess(process)
-		removeErr := scheduler.RemoveProcess(0, false)
+		addErr := scheduler.AddProcess(process, scheduleFile)
+		removeErr := scheduler.RemoveProcess(0, false, scheduleFile)
 		if addErr != nil || removeErr != nil {
 			t.Errorf("Unexpected errors: %v, %v", addErr, removeErr)
 		}
@@ -154,12 +156,12 @@ func TestRemoveProcess(t *testing.T) {
 		afterTestProcess := newMockProcess(t, "later", time.Hour*2, time.Minute*30, false)
 		afterRecurredProcess := newMockProcess(t, "later", time.Hour*27, time.Minute*30, false)
 
-		scheduler.AddProcess(testProcess)
-		scheduler.AddProcess(beforeTestProcess)
-		scheduler.AddProcess(afterTestProcess)
-		scheduler.AddProcess(afterRecurredProcess)
+		scheduler.AddProcess(testProcess, scheduleFile)
+		scheduler.AddProcess(beforeTestProcess, scheduleFile)
+		scheduler.AddProcess(afterTestProcess, scheduleFile)
+		scheduler.AddProcess(afterRecurredProcess, scheduleFile)
 		// now schedule should look like: {earlier, recurring, later, muchlater}
-		removeErr := scheduler.RemoveProcess(1, false)
+		removeErr := scheduler.RemoveProcess(1, false, scheduleFile)
 		if removeErr != nil {
 			t.Errorf("Unexpected error: %v", removeErr)
 		}
@@ -177,12 +179,12 @@ func TestRemoveProcess(t *testing.T) {
 		afterTestProcess := newMockProcess(t, "later", time.Hour*2, time.Minute*30, false)
 		duringRecurredProcess := newMockProcess(t, "later", time.Hour*24, time.Hour, false)
 
-		scheduler.AddProcess(testProcess)
-		scheduler.AddProcess(beforeTestProcess)
-		scheduler.AddProcess(afterTestProcess)
-		scheduler.AddProcess(duringRecurredProcess)
+		scheduler.AddProcess(testProcess, scheduleFile)
+		scheduler.AddProcess(beforeTestProcess, scheduleFile)
+		scheduler.AddProcess(afterTestProcess, scheduleFile)
+		scheduler.AddProcess(duringRecurredProcess, scheduleFile)
 		// now schedule should look like: {earlier, recurring, later, muchlater}
-		removeErr := scheduler.RemoveProcess(1, false)
+		removeErr := scheduler.RemoveProcess(1, false, scheduleFile)
 		if removeErr != ErrSchedule {
 			t.Errorf("Expected: %v got %v instead", ErrSchedule, removeErr)
 		}
@@ -195,7 +197,7 @@ func TestUpdateSchedule(t *testing.T) {
 	scheduler := GetScheduler()
 	scheduler.Schedule = nil
 	t.Run("returns nil when schedule is empty", func(t *testing.T) {
-		err := scheduler.UpdateSchedule()
+		err := scheduler.UpdateSchedule(scheduleFile)
 		scheduleLength := len(scheduler.Schedule)
 		if err != nil {
 			t.Errorf("Unexpected error. Expected %v got %v", nil, err)
@@ -208,8 +210,8 @@ func TestUpdateSchedule(t *testing.T) {
 	t.Run("leaves schedule as is if time is within start and end time of schedule[0]", func(t *testing.T) {
 		scheduler.Schedule = nil
 		ongoingProcess := newMockProcess(t, "ongoing process", -time.Minute, time.Hour, false)
-		scheduler.AddProcess(ongoingProcess)
-		err := scheduler.UpdateSchedule()
+		scheduler.AddProcess(ongoingProcess, scheduleFile)
+		err := scheduler.UpdateSchedule(scheduleFile)
 		if err != nil {
 			t.Errorf("Unexpected error. Expected %v got %v", nil, err)
 		}
@@ -222,8 +224,8 @@ func TestUpdateSchedule(t *testing.T) {
 	t.Run("removes process at index 0 if time is past end time of process", func(t *testing.T) {
 		scheduler.Schedule = nil
 		completedProcess := newMockProcess(t, "completed process", -time.Hour, time.Minute, false)
-		scheduler.AddProcess(completedProcess)
-		err := scheduler.UpdateSchedule()
+		scheduler.AddProcess(completedProcess, scheduleFile)
+		err := scheduler.UpdateSchedule(scheduleFile)
 		if err != nil {
 			t.Errorf("Unexpected error. Expected %v got %v", nil, err)
 		}
@@ -236,8 +238,8 @@ func TestUpdateSchedule(t *testing.T) {
 	t.Run("leaves schedule as is if time is before start time of schedule[0]", func(t *testing.T) {
 		scheduler.Schedule = nil
 		pendingProcess := newMockProcess(t, "pending process", time.Hour, time.Minute, false)
-		scheduler.AddProcess(pendingProcess)
-		err := scheduler.UpdateSchedule()
+		scheduler.AddProcess(pendingProcess, scheduleFile)
+		err := scheduler.UpdateSchedule(scheduleFile)
 		if err != nil {
 			t.Errorf("Unexpected error. Expected %v got %v", nil, err)
 		}
@@ -262,7 +264,7 @@ func TestGetCurrentProcess(t *testing.T) {
 	t.Run("return nil when process at index 0 hasn't started", func(t *testing.T) {
 		scheduler.Schedule = nil
 		pendingProcess := newMockProcess(t, "pending process", time.Hour, time.Minute, false)
-		scheduler.AddProcess(pendingProcess)
+		scheduler.AddProcess(pendingProcess, scheduleFile)
 		process := scheduler.GetCurrentProcess()
 		if process != nil {
 			t.Errorf("Expected nil got %v", process)
@@ -272,10 +274,12 @@ func TestGetCurrentProcess(t *testing.T) {
 	t.Run("return process at index 0 when time is within start and end time", func(t *testing.T) {
 		scheduler.Schedule = nil
 		ongoingProcess := newMockProcess(t, "ongoing process", -time.Minute, time.Hour, false)
-		scheduler.AddProcess(ongoingProcess)
+		scheduler.AddProcess(ongoingProcess, scheduleFile)
 		process := scheduler.GetCurrentProcess()
 		if process == nil || !reflect.DeepEqual(*process, ongoingProcess) {
 			t.Errorf("Expected %v got %v", ongoingProcess, process)
 		}
 	})
 }
+
+// test read and write from schedulefile

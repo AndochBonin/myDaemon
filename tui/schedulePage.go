@@ -7,6 +7,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+//var scheduleFile string = "./storage/schedule.json" //for testing
+
 func (m *Model) SchedulePage() string {
 	pageTitle := "Schedule"
 	pageKeys := "delete [d]"
@@ -50,7 +52,7 @@ func (m *Model) schedulePageKeyHandler(key string) tea.Cmd {
 	case "down":
 		m.cursor = min(m.cursor+1, len(m.scheduler.Schedule)-1)
 	case "d":
-		err := m.scheduler.RemoveProcess(m.cursor, true)
+		err := m.scheduler.RemoveProcess(m.cursor, true, scheduleFile)
 		if err != nil {
 			m.err = err
 		}

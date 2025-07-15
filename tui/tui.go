@@ -49,9 +49,10 @@ type Model struct {
 	programList program.ProgramList
 }
 
-// var programListFile string = "./program/programList.json"
+//var programListFile string = "./storage/programList.json" //for testing
 var exePath, _ = os.Executable()
-var programListFile string = filepath.Join(filepath.Dir(exePath), "program", "programList.json")
+var programListFile string = filepath.Join(filepath.Dir(exePath), "storage", "programList.json")
+var scheduleFile string = filepath.Join(filepath.Dir(exePath), "storage", "schedule.json")
 
 func initialModel() (Model, error) {
 	var m Model
