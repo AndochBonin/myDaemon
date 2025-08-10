@@ -13,23 +13,25 @@ func (m *Model) SchedulePage() string {
 	pageTitle := "Schedule"
 	pageKeys := "delete [d]"
 	processes := ""
-	if m.scheduler == nil {
-		return pageTitleStyle.Render(pageTitle) + "\n\n" + navStyle.Render(pageKeys) + "\n\n" + navStyle.Render("nothing here yet.")
-	}
-	for i, process := range m.scheduler.Schedule {
-		var style lipgloss.Style = textContentStyle
-		cursor := " "
-		if m.cursor == i {
-			style = focusedStyle.Bold(true)
-			cursor = "> "
+	if m.scheduler != nil {
+		for i, process := range m.scheduler.Schedule {
+			var style lipgloss.Style = textContentStyle
+			cursor := " "
+			if m.cursor == i {
+				style = focusedStyle.Bold(true)
+				cursor = "> "
+			}
+			// reference time: Jan 2 15:04:05 2006 MST
+			startTime := process.StartTime.Format("02/01/2006 15:04")
+			duration := process.Duration.Truncate(time.Second).String()
+			if i == 0 && m.scheduler.GetCurrentProcess() != nil {
+				startTime = "running"
+				duration = time.Until(process.StartTime.Add(process.Duration)).Truncate(time.Second).String()
+			}
+			programName := process.Program.Name
+			processes += style.Render(cursor+programName+": "+startTime+" ("+
+				duration+")") + "\n"
 		}
-		// reference time: Jan 2 15:04:05 2006 MST
-		isRecurring := ""
-		if process.IsRecurring {
-			isRecurring = "(R)"
-		}
-		processes += style.Render(cursor + process.Program.Name + ": " + process.StartTime.Format("02/01/2006 15:04") + " - " +
-			process.Duration.Truncate(time.Second).String() + " " + isRecurring) + "\n"
 	}
 	if processes == "" {
 		processes = navStyle.Render("nothing yet.")
