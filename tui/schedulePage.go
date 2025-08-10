@@ -24,13 +24,17 @@ func (m *Model) SchedulePage() string {
 			// reference time: Jan 2 15:04:05 2006 MST
 			startTime := process.StartTime.Format("02/01/2006 15:04")
 			duration := process.Duration.Truncate(time.Second).String()
+			recurring := "" 
+			if process.IsRecurring {
+				recurring = "\u27F3"
+			}
 			if i == 0 && m.scheduler.GetCurrentProcess() != nil {
 				startTime = "running"
 				duration = time.Until(process.StartTime.Add(process.Duration)).Truncate(time.Second).String()
 			}
 			programName := process.Program.Name
 			processes += style.Render(cursor+programName+": "+startTime+" ("+
-				duration+")") + "\n"
+				duration+") "+recurring) + "\n"
 		}
 	}
 	if processes == "" {
