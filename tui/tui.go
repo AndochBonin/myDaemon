@@ -3,6 +3,7 @@ package tui
 import (
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/AndochBonin/myDaemon/process"
 	"github.com/AndochBonin/myDaemon/program"
@@ -68,13 +69,16 @@ func initialModel() (Model, error) {
 
 func (m Model) Init() tea.Cmd {
 	
-	return tea.SetWindowTitle("myDaemon")
+	return tea.Batch(tea.SetWindowTitle("myDaemon"), tick())
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var keyCmd tea.Cmd
+	var timeCmd tea.Cmd
 	switch msg := msg.(type) {
+	case time.Time:
+		timeCmd = tick() 
 	case tea.KeyMsg:
 		switch m.page {
 		case schedule:
@@ -104,7 +108,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		*textModel, cmd = textModel.Update(msg)
 		cmds = append(cmds, cmd)
 	}
-	cmds = append(cmds, keyCmd)
+	cmds = append(cmds, keyCmd, timeCmd)
 	cmd := tea.Batch(cmds...)
 	return m, cmd
 }
@@ -155,4 +159,10 @@ func ErrMessage(err error) string {
 		errMessage = err.Error()
 	}
 	return "\n" + errStyle.Render(errMessage)
+}
+
+func tick() tea.Cmd {
+	return tea.Tick(time.Second, func(t time.Time) tea.Msg {
+		return t
+	})
 }
